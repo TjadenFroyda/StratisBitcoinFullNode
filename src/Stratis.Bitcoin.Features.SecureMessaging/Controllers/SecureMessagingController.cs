@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
 		{
 			Key privateKey = GetPrivateKey(request);
 			Key receiverPubKey = request.ReceiverPublicKey == null ? Key.Parse(request.ReceiverPublicKey) : throw new SecureMessageException("Please enter the receiver's public key");
-			this.secureMessaging = new SecureMessaging(privateKey.GetWif(this.network).ToString(), receiverPubKey.GetWif(this.network).ToString(), this.network);
+			this.secureMessaging = new SecureMessaging(privateKey.GetWif(this.network).ToHex(), receiverPubKey.GetWif(this.network).ToHex(), this.network);
 			if (action == Action.Encrypt)
 			{
 				return this.secureMessaging.EncryptMessage(request.Message);
