@@ -12,19 +12,19 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Interfaces
 		/// Gets the shared secret.
 		/// </summary>
 		/// <returns>The shared secret.</returns>
-		string GetSharedSecret();
+		Key GetSharedSecret();
         
         /// <summary>
         /// Gets the shared private key.
         /// </summary>
         /// <returns>The shared private key.</returns>
-		BitcoinSecret GetSharedPrivateKey();
+		ExtKey GetSharedMasterPrivateKey();
 
 		/// <summary>
         /// Gets the pub key.
         /// </summary>
         /// <returns>The pub key.</returns>
-        PubKey GetSharedPubKey();
+        ExtPubKey GetSharedMasterPubKey();
 
         /// <summary>
         /// Gets the destination script pub key.

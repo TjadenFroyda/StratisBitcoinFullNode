@@ -1,4 +1,6 @@
-﻿using Stratis.Bitcoin.Tests.Common.Logging;
+﻿using System;
+using NBitcoin;
+using Stratis.Bitcoin.Tests.Common.Logging;
 using Xunit;
 
 // TODO: Add Logging
@@ -20,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
 		{
 			// TODO: Test retrieving a private key from Alice's wallet via API. 
 			// DumpPrivKey is a RPC call. Seeking to avoid RPC based calls as not all nodes 
-			// will be running RPC and API is more modern approach.            
+			// will be running RPC and API is more modern approach.
 		}
 
 		[Fact]

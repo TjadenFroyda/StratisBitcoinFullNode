@@ -1,6 +1,5 @@
 ﻿using NBitcoin;
 using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
@@ -19,15 +18,16 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
 	/// 
 	public class SecureMessaging : ISecureMessaging
 	{
-		private readonly string myPrivKey;
-		private readonly string extPubKey;
-		private readonly string sharedSecret;
-		private BitcoinSecret sharedPrivateKey;
+		private readonly Key myPrivKey;
+		private readonly Key extPubKey;
+		private readonly Key sharedSecret;
+		private readonly ExtKey sharedPrivateKey;
 		private readonly Network network;
-		private ISymmetricEncryption symmetricEncryption;
+		private readonly ISymmetricEncryption symmetricEncryption;
 		private string blockexplorerurl = "https://chainz.cryptoid.info/explorer/tx.raw.dws?coin=strat&id=";
+		private readonly Wallet.Wallet sharedWallet;
 
-		public SecureMessaging(string privkey, string pubkey, Network net)
+		public SecureMessaging(Key privkey, Key pubkey, Network net)
 		{
 			Guard.NotNull(privkey, nameof(privkey));
 			Guard.NotNull(pubkey, nameof(pubkey));
@@ -35,27 +35,33 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
 			this.myPrivKey = privkey;
 			this.extPubKey = pubkey;
 			this.network = net;
-			this.sharedSecret = SetSharedSecret(pubkey, privkey);
-			this.symmetricEncryption = new AES(this.sharedSecret);
-			this.sharedPrivateKey = SetSharedPrivateKey();
+			this.sharedSecret = this.SetSharedSecret(pubkey, privkey);
+			this.symmetricEncryption = new AES(this.sharedSecret.ToHex(this.network));
+			this.sharedPrivateKey = this.SetSharedMasterPrivateKey();
+			this.sharedWallet = this.generateSharedWallet();
 		}
-
+        
 		/// <summary>
         /// Get Sharedsecret given the public key of the message sender and the private key of the receiver
         /// </summary>
         /// <returns>The shared secret key</returns>
-		private static string SetSharedSecret(string publickey, string privatekey)
+		private Key SetSharedSecret(Key publickey, Key privatekey)
         {
-			PubKey pk = new PubKey(publickey);
-			Key key = new Key(Encoders.Hex.DecodeData(privatekey));
-			return Encoders.Hex.EncodeData(Hashes.SHA256(pk.GetSharedPubkey(key).ToBytes()));
+			PubKey pk = new PubKey(publickey.ToHex(this.network));
+			Key key = new Key(privatekey.ToBytes());
+			return new Key(Hashes.SHA256(pk.GetSharedPubkey(key).ToBytes()));
         }
+
+        private Wallet.Wallet generateSharedWallet()
+		{
+			// TODO: Generate shared wallet
+		}
 
         /// <summary>
         /// Gets the shared secret.
         /// </summary>
         /// <returns>The shared secret.</returns>
-        public string GetSharedSecret()
+        public Key GetSharedSecret()
 		{
 			return this.sharedSecret;
 		}
@@ -64,7 +70,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// Gets the shared private key.
         /// </summary>
         /// <returns>The shared private key.</returns>
-		public BitcoinSecret GetSharedPrivateKey()
+		public ExtKey GetSharedMasterPrivateKey()
 		{
 			return this.sharedPrivateKey;
 		}
@@ -73,18 +79,18 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// Sets the shared private key.
         /// </summary>
         /// <returns>The shared private key.</returns>
-        private BitcoinSecret SetSharedPrivateKey()
+        private ExtKey SetSharedMasterPrivateKey()
 		{
-			return new Key(Encoders.Hex.DecodeData(this.GetSharedSecret())).GetBitcoinSecret(this.network);
+			return new ExtKey(this.sharedSecret.ToBytes());
         }
         
         /// <summary>
         /// Gets the pub key.
         /// </summary>
         /// <returns>The pub key.</returns>
-        public PubKey GetSharedPubKey()
+        public ExtPubKey GetSharedMasterPubKey()
 		{
-			return this.sharedPrivateKey.PubKey;
+			return this.sharedPrivateKey.Neuter();
 		}
 
         /// <summary>
@@ -93,7 +99,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// <returns>The shared address.</returns>
         public BitcoinPubKeyAddress GetSharedAddress()
 		{
-			return this.sharedPrivateKey.PubKey.GetAddress(this.network);
+			return this.sharedPrivateKey.Neuter().PubKey.GetAddress(this.network);
 		}
         
         /// <summary>
