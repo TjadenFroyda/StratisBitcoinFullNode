@@ -7,6 +7,10 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 
+// TODO: Add Logging
+// TODO: Add/improve comments
+// TODO: Check coding style guide
+// TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging
 {    
 	/// <summary>
@@ -84,14 +88,18 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
 		}
 
         /// <summary>
-        /// 
+        /// Gets the shared address.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The shared address.</returns>
         public BitcoinPubKeyAddress GetSharedAddress()
 		{
 			return this.sharedPrivateKey.PubKey.GetAddress(this.network);
 		}
         
+        /// <summary>
+        /// Gets the destination script pub key.
+        /// </summary>
+        /// <returns>The destination script pub key.</returns>
         public Script GetDestScriptPubKey() 
 		{
 			return this.GetSharedAddress().ScriptPubKey;

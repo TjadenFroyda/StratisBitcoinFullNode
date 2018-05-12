@@ -1,4 +1,6 @@
-﻿namespace Stratis.Bitcoin.Features.SecureMessaging.Interfaces
+﻿// TODO: Add/improve comments
+// TODO: Check coding style guide
+namespace Stratis.Bitcoin.Features.SecureMessaging.Interfaces
 {
     public interface ISymmetricEncryption
     {

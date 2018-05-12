@@ -8,12 +8,16 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Features.SecureMessaging.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 
+// TODO: Add Logging
+// TODO: Add/improve Comments
+// TODO: Check coding style guide
+// TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging
 {
 	public class TransactionBatchBuilder : IBatchTransactionBuilder
     {
 		private List<WalletBuildTransactionModel> transactionModelList;
-		private decimal totalFee;
+		private decimal totalCost;
         
         /// <summary>
         /// Initializes a new instance of the
@@ -23,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// <param name="fullNode">Full node.</param>
 		public TransactionBatchBuilder(List<TransactionBuildContext> contexts, FullNode fullNode)
         {
-			this.totalFee = 0.0M;
+			this.totalCost = 0.0M;
 			this.transactionModelList = new List<WalletBuildTransactionModel>();
 			this.buildTransactionModels(contexts, fullNode);
         }
@@ -32,9 +36,9 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// Gets the total fee in satoshis.
         /// </summary>
         /// <returns>The total fee in satoshis.</returns>
-		public int GetTotalFeeInSatoshis()
+		public int GetTotalCostInSatoshis()
 		{
-			return Decimal.ToInt32(this.totalFee);
+			return Decimal.ToInt32(this.totalCost);
 		}
         
         /// <summary>
@@ -65,7 +69,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
 				Transaction transactionResult = fullnode.NodeService<WalletTransactionHandler>().BuildTransaction(context);
                 if(!StandardScripts.IsStandardTransaction(transactionResult))
 				{
-					throw new SecureMessageException("Non-standard transaction.");
+					throw new SecureMessageException("TransactionBatchBuilder: Non-standard transaction.");
 				}
 				WalletBuildTransactionModel model = new WalletBuildTransactionModel
 				{
@@ -73,11 +77,9 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
 					Fee = context.TransactionFee,
 					TransactionId = transactionResult.GetHash()
 				};
-				this.totalFee += context.TransactionFee.ToDecimal(MoneyUnit.Satoshi);
+				this.totalCost += (context.TransactionFee.ToDecimal(MoneyUnit.Satoshi) + 0.00000001M);
 				this.transactionModelList.Add(model);
 			}                         
-		}
-
-
+		}        
     }
 }

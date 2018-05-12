@@ -6,10 +6,14 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 
+// TODO: Add Logging
+// TODO: Add/improve Comments
+// TODO: Check coding style guide
+// TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging
 {
 	/// <summary>
-    /// Aes.
+    /// Implementaton of AES Symmetric Algorithm based on MSDN example. 
     /// </summary>
 	public class AES : ISymmetricEncryption
     {
@@ -82,18 +86,26 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// Adapted from https://msdn.microsoft.com/en-us/library/system.security.cryptography.aesmanaged(v=vs.110).aspx#Examples
 		private byte[] EncryptStringToBytes_Aes(string plainText, ref byte[] SaltBytes, byte[] Key, byte[] IV)
         {
-            // Check arguments.
-            if (plainText == null || plainText.Length <= 0)
-                throw new ArgumentNullException(nameof(plainText));
+			// Check arguments.
+			if (plainText == null || plainText.Length <= 0)
+			{
+				throw new ArgumentNullException(nameof(plainText));
+			}
 			if (SaltBytes == null || SaltBytes.Length <= 0)
-                throw new ArgumentNullException(nameof(Key));
-            if (Key == null || Key.Length <= 0)
-                throw new ArgumentNullException(nameof(Key));
-            if (IV == null || IV.Length <= 0)
-                throw new ArgumentNullException(nameof(IV));
+			{
+				throw new ArgumentNullException(nameof(Key));
+			}
+			if (Key == null || Key.Length <= 0)
+			{
+				throw new ArgumentNullException(nameof(Key));
+			}
+			if (IV == null || IV.Length <= 0)
+			{
+				throw new ArgumentNullException(nameof(IV));
+			}
+
             byte[] cipherBytes;
-            // Create an AesManaged object
-            // with the specified key and IV.
+
             using (AesManaged aesAlg = new AesManaged())
             {
 				aesAlg.KeySize = 256;                
@@ -129,37 +141,33 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
 		/// Adapted from https://msdn.microsoft.com/en-us/library/system.security.cryptography.aesmanaged(v=vs.110).aspx#Examples
         private string DecryptStringFromBytes_Aes(byte[] cipherTextBytes, byte[] Key, byte[] IV)
         {
-            // Check arguments.
-            if (cipherTextBytes == null || cipherTextBytes.Length <= 0)
-                throw new ArgumentNullException(nameof(cipherTextBytes));
-            if (Key == null || Key.Length <= 0)
-                throw new ArgumentNullException(nameof(Key));
-            if (IV == null || IV.Length <= 0)
-                throw new ArgumentNullException(nameof(IV));
-
-            // Declare the string used to hold
-            // the decrypted text.
+			if (cipherTextBytes == null || cipherTextBytes.Length <= 0)
+			{
+				throw new ArgumentNullException(nameof(cipherTextBytes));
+			}
+			if (Key == null || Key.Length <= 0)
+			{
+				throw new ArgumentNullException(nameof(Key));
+			}
+			if (IV == null || IV.Length <= 0)
+			{
+				throw new ArgumentNullException(nameof(IV));
+			}
             string plaintext = null;
-
-            // Create an AesManaged object
-            // with the specified key and IV.
+            
             using (AesManaged aesAlg = new AesManaged())
             {
                 aesAlg.Key = Key;
                 aesAlg.IV = IV;
-
-                // Create a decrytor to perform the stream transform.
+                
                 ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-
-                // Create the streams used for decryption.
+                
                 using (MemoryStream msDecrypt = new MemoryStream(cipherTextBytes))
                 {
                     using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
                     {
                         using (StreamReader srDecrypt = new StreamReader(csDecrypt))
                         {
-                            // Read the decrypted bytes from the decrypting stream
-                            // and place them in a string.
                             plaintext = srDecrypt.ReadToEnd();
                         }
                     }

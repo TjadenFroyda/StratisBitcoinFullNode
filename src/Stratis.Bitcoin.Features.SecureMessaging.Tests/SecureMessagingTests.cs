@@ -4,23 +4,12 @@ using Stratis.Bitcoin.Tests.Common.Logging;
 using System;
 using Xunit;
 
+// TODO: Add Logging
+// TODO: Add/improve Comments
+// TODO: Check coding style guide
+// TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
 {
-	/// <summary>
-    /// Test person class to help with Unit Testing 
-    /// </summary>
-	public class TestPerson
-    {
-        public string privKey { get; private set; }
-        public string pubKey { get; private set; }
-
-        public TestPerson(string pub, string priv)
-        {
-            this.pubKey = pub;
-            this.privKey = priv;
-        }
-    }
-
     /// <summary>
     /// Secure messaging tests.
     /// </summary>
@@ -58,6 +47,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
 			this.BobSM = new SecureMessaging(this.Bob.privKey, this.Alice.pubKey, Network.TestNet);
 			this.AliceSM = new SecureMessaging(this.Alice.privKey, this.Bob.pubKey, Network.TestNet);
 		}
+
         /// <summary>
         /// Tests the shared secret algo1.
         /// </summary>
@@ -223,33 +213,6 @@ Quisque tellus dolor, tempor eu tortor sit amet, finibus tincidunt augue.Etiam o
 				Assert.True(e is System.Security.Cryptography.CryptographicException);
 			}
             
-		}
-		/// TODO 
-        /// <summary>
-        /// Tests the stealth address generation.
-        /// </summary>
-        [Fact]
-        public void TestStealthAddressGeneration()
-		{
-			
-		}
-
-        /// <summary>
-        /// Tests the op return message builder.
-        /// </summary>
-		[Fact]
-        public void TestOpReturnMessageBuilder()
-		{
-        
-		}
-
-        /// <summary>
-        /// Tests the transaction builder.
-        /// </summary>
-		[Fact]
-        public void TestTransactionBuilder()
-		{
-			
 		}
     }
 }

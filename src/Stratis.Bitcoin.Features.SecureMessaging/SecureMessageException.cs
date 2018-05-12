@@ -1,4 +1,7 @@
 ﻿using System;
+
+// TODO: Add/improve comments
+// TODO: Check coding style guide
 namespace Stratis.Bitcoin.Features.SecureMessaging
 {
 	/// <summary>
@@ -6,7 +9,6 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
     /// </summary>
 	public class SecureMessageException : Exception
     {
-		
         public SecureMessageException(string message)
         {
         }

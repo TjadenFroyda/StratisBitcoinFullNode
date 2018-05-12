@@ -1,4 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+
+// TODO: Add/improve comments
+// TODO: Check coding style guide
 namespace Stratis.Bitcoin.Features.SecureMessaging.Interfaces
 {
     public interface IBatchTransactionBuilder
@@ -7,7 +10,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Interfaces
         /// Gets the total fee in satoshis for the batch of transactions
         /// </summary>
         /// <returns>The total fee in satoshis.</returns>
-		int GetTotalFeeInSatoshis();
+		int GetTotalCostInSatoshis();
 
         /// <summary>
         /// Sends the batch.

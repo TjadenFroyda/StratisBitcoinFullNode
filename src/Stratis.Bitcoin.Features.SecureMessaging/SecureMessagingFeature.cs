@@ -6,6 +6,10 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.SecureMessaging.Controllers;
 using Stratis.Bitcoin.Utilities;
 
+// TODO: Add Logging
+// TODO: Add/improve Comments
+// TODO: Check coding style guide
+// TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging
 {
     /// <summary>

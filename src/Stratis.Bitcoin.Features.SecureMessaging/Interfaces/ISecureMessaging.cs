@@ -2,6 +2,8 @@
 using Stratis.Bitcoin.Features.Wallet;
 using System.Collections.Generic;
 
+// TODO: Add/improve comments
+// TODO: Check coding style guide
 namespace Stratis.Bitcoin.Features.SecureMessaging.Interfaces
 {
 	public interface ISecureMessaging

@@ -13,8 +13,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-
-
+// TODO: Add Logging
+// TODO: Add/improve comments
+// TODO: Check coding style guide
+// TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
 {
 	/// <summary>
@@ -56,7 +58,6 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
 			IWalletManager walletManager,
 			Network network,
 			IWalletTransactionHandler walletTransactionHandler)
-		
 		{
 			Guard.NotNull(fullNode, nameof(fullNode));
 			Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -69,17 +70,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
 			this.network = network;
 			this.walletTransactionHandler = walletTransactionHandler;
 		}
-        
-        /// <summary>
-        /// Gets the network.
-        /// </summary>
-        /// <returns>The network.</returns>
-        /// <param name="request">Request.</param>
-		internal Network GetNetwork(SecureMessageRequest request)
-		{
-			return request.Network == null ? Network.StratisMain : Network.StratisTest;
-		}
-        
+                
         /// <summary>
         /// Messages the action.
         /// </summary>
@@ -104,17 +95,16 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// </summary>
         /// <returns>The private key.</returns>
         /// <param name="request">Request.</param>
-		internal Key GetPrivateKey(SecureMessageRequest request)
+		internal Key GetPrivateKey(GetPrivateKeyRequest request)
 		{
-			Network network = this.GetNetwork(request);
             if (request.SenderPrivateKey != null)
             {
-                return Key.Parse(request.SenderPrivateKey, network);
+                return Key.Parse(request.SenderPrivateKey, this.network);
             }
             else if (request.WalletName != null || request.Passphrase != null)
             {
                 string encryptedSeed = this.walletManager.GetWalletByName(request.WalletName).EncryptedSeed;
-                return HdOperations.DecryptSeed(encryptedSeed, request.Passphrase, network);
+                return HdOperations.DecryptSeed(encryptedSeed, request.Passphrase, this.network);
             }
             else
             {
@@ -127,7 +117,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// </summary>
         /// <returns>The destination script pub key.</returns>
         /// <param name="request">Request.</param>
-		internal Script GetDestScriptPubKey(SecureMessageRequest request)
+		internal Script GetDestScriptPubKey(GetDestScriptPubKeyRequest request)
 		{
 			if (request.DestinationAddress == null)
             {
@@ -150,7 +140,9 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
 
             List<string> chunkedEncryptedMessages = this.secureMessaging.prepareOPReturnMessageList(encryptedMessage);
 
-            Script destScriptPubKey = this.GetDestScriptPubKey(request);
+			GetDestScriptPubKeyRequest scriptPubKeyRequest = new GetDestScriptPubKeyRequest();
+			scriptPubKeyRequest.DestinationAddress = request.DestinationAddress;
+			Script destScriptPubKey = this.GetDestScriptPubKey(scriptPubKeyRequest);
             
             List<TransactionBuildContext> contexts = this.secureMessaging.TransactionBuilder(
                 request.WalletName,
@@ -245,9 +237,15 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             }
 		}
 
-		[Route("get-fee-estimate")]
+        /// <summary>
+        /// Calculates the transaction cost given the size of the message. Each message must be 
+		/// chunked into a 40 byte transaction with 1 satoshi amount and associated miner fee. 
+        /// </summary>
+        /// <returns>The total transaction cost.</returns>
+        /// <param name="request">HTTP post request with required parameters. See model for details.</param>
+		[Route("get-transaction-cost")]
         [HttpPost]        
-        public IActionResult GetFeeEstimate([FromBody] SecureMessageRequest request)
+        public IActionResult GetTransactionCost([FromBody] SecureMessageRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -259,7 +257,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             try
             {
                 TransactionBatchBuilder batchBuilder = BuildTransactionBatch(request);
-				return Json(batchBuilder.GetTotalFeeInSatoshis());                
+				return Json(batchBuilder.GetTotalCostInSatoshis());                
             }
             catch (Exception e)
             {
