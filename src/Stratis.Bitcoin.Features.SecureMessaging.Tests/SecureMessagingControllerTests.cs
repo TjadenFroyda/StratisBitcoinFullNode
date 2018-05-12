@@ -5,6 +5,7 @@ using Xunit;
 // TODO: Add/improve Comments
 // TODO: Check coding style guide
 // TODO: Safety checks
+// TODO: Add tests for valid and invalid model requests for each API endpoint. 
 namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
 {
 	public class SecureMessagingControllerTests : LogsTestBase
