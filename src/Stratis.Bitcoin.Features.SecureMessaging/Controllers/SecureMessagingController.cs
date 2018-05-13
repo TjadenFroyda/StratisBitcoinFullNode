@@ -2,17 +2,23 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
 using Stratis.Bitcoin.Features.SecureMessaging.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
+using System.Text;
+
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.SecureMessaging.Tests")]
 
@@ -26,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
     /// Controller providing SecureMessaging operation
     /// </summary>
     [Route("api/[controller]")]
-    public class SecureMessagingController : Controller
+    public partial class SecureMessagingController : Controller
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -48,6 +54,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
 
         /// <summary>Action.</summary>
         internal enum Action { Encrypt, Decrypt };
+
+		private Uri apiURI;
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -72,6 +80,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             this.walletManager = walletManager;
             this.network = network;
             this.walletTransactionHandler = walletTransactionHandler;
+			this.apiURI = this.fullNode.NodeService<ApiSettings>().ApiUri;
         }
                 
         /// <summary>
@@ -99,11 +108,11 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         }
         
         /// <summary>
-        /// Gets the private key.
+        /// Gets the private messaging key.
         /// </summary>
-        /// <returns>The private key.</returns>
+        /// <returns>The private messaging key.</returns>
         /// <param name="request">Request.</param>
-        internal Key GetPrivateKey(GetPrivateKeyRequest request)
+        internal Key GetPrivateMessagingKey(SecureMessageKeyRequest request)
         {
             if (request.SenderPrivateKey != null)
             {
@@ -112,13 +121,24 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             else if (request.WalletName != null || request.Passphrase != null)
             {
                 string encryptedSeed = this.walletManager.GetWalletByName(request.WalletName).EncryptedSeed;
-                return HdOperations.DecryptSeed(encryptedSeed, request.Passphrase, this.network);
+                Key decryptedSeed = HdOperations.DecryptSeed(encryptedSeed, request.Passphrase, this.network);
+				return new Key(decryptedSeed.ToBytes());
             }
             else
             {
                 throw new SecureMessageException("Missing (wallet and passphrase) or private key.");
             }
         }
+
+        /// <summary>
+        /// Gets the private messaging pub key.
+        /// </summary>
+        /// <returns>The private messaging pub key.</returns>
+        /// <param name="request">Request.</param>
+		internal PubKey GetPrivateMessagingPubKey(SecureMessageRequest request){
+			Key privateKey = GetPrivateMessagingKey(request);
+			return privateKey.PubKey;
+		}
         
         /// <summary>
         /// Gets the destination script pub key.
@@ -142,138 +162,47 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// Builds the transaction batch.
         /// </summary>
         /// <returns>The transaction batch.</returns>
-        internal TransactionBatchBuilder BuildTransactionBatch(SecureMessageRequest request)
+		internal List<BuildTransactionRequest> PrepareTransactionBatch(SecureMessageRequest request)
         {
             string encryptedMessage = this.MessageAction(request, Action.Encrypt);
 
             List<string> chunkedEncryptedMessages = this.secureMessaging.prepareOPReturnMessageList(encryptedMessage);
 
-            GetDestScriptPubKeyRequest scriptPubKeyRequest = new GetDestScriptPubKeyRequest();
-            scriptPubKeyRequest.DestinationAddress = request.DestinationAddress;
-            Script destScriptPubKey = this.GetDestScriptPubKey(scriptPubKeyRequest);
-            
-            List<TransactionBuildContext> contexts = this.secureMessaging.TransactionBuilder(
-                request.WalletName,
-                request.AccountName,
-                destScriptPubKey,
-                request.Passphrase,
-                chunkedEncryptedMessages
-            );
+			List<BuildTransactionRequest> prepareTransactionRequests = new List<BuildTransactionRequest>();
 
-            return new TransactionBatchBuilder(contexts, (FullNode)this.fullNode);
+			foreach (string message in chunkedEncryptedMessages){
+				BuildTransactionRequest transactionRequest = new BuildTransactionRequest
+				{
+					WalletName = request.WalletName,
+					AccountName = request.AccountName,
+					DestinationAddress = request.DestinationAddress,
+					Amount = "0.0",
+					FeeAmount = "Low",
+					Password = request.Passphrase,
+					OpReturnData = message,
+                    AllowUnconfirmed = true,
+                    ShuffleOutputs = true
+				};
+				prepareTransactionRequests.Add(transactionRequest);
+			}
+			return prepareTransactionRequests;
         }
 
-        /// <summary>
-        /// Encrypts the message.
-        /// </summary>
-        /// <returns>The message.</returns>
-        /// <param name="request">Request.</param>
-        [Route("encrypt-message")]
-        [HttpPost]
-        public IActionResult EncryptMessage([FromBody] SecureMessageRequest request)
-        {
-            Guard.NotNull(request, nameof(request));
+		internal List<WalletBuildTransactionModel> BuildTransactionBatch(List<BuildTransactionRequest> buildTransactionRequests){
 
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return BuildErrorResponse(this.ModelState);
-            }
-            try
-            {
-                return Json(MessageAction(request, Action.Encrypt));
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
 
-        /// <summary>
-        /// Decrypts the message.
-        /// </summary>
-        /// <returns>The message.</returns>
-        /// <param name="request">Request.</param>
-        [Route("decrypt-message")]
-        [HttpPost]
-        public IActionResult DecryptMessage([FromBody] SecureMessageRequest request)
-        {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return BuildErrorResponse(this.ModelState);
-            }
-            try
-            {
-                return Json(MessageAction(request,Action.Decrypt));
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-        
-        /// <summary>
-        /// Sends the secure message.
-        /// </summary>
-        /// <returns>The secure message.</returns>
-        /// <param name="request">Request.</param>
-        [Route("send")]
-        [HttpPost]        
-        public IActionResult SendSecureMessage([FromBody] SecureMessageRequest request)
-        {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return BuildErrorResponse(this.ModelState);
-            }
-            try
-            {
-                TransactionBatchBuilder batchBuilder = BuildTransactionBatch(request);
-                return Json(batchBuilder.SendBatch((FullNode)this.fullNode));                
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
-        /// <summary>
-        /// Calculates the transaction cost given the size of the message. Each message must be 
-        /// chunked into a 40 byte transaction with 1 satoshi amount and associated miner fee. 
-        /// </summary>
-        /// <returns>The total transaction cost.</returns>
-        /// <param name="request">HTTP post request with required parameters. See model for details.</param>
-        [Route("get-transaction-cost")]
-        [HttpPost]        
-        public IActionResult GetTransactionCost([FromBody] SecureMessageRequest request)
-        {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return BuildErrorResponse(this.ModelState);
-            }
-            try
-            {
-                TransactionBatchBuilder batchBuilder = BuildTransactionBatch(request);
-                return Json(batchBuilder.GetTotalCostInSatoshis());                
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }   
-
+			List<WalletBuildTransactionModel> walletBuildTransactionModels = new List<WalletBuildTransactionModel>();
+			using (var httpClient = new HttpClient())
+			{
+				foreach (BuildTransactionRequest buildTransactionRequest in buildTransactionRequests)
+				{
+					var httpRequestContent = new StringContent(buildTransactionRequest.ToString(), Encoding.UTF8, "application/json");
+					var response
+				}
+                
+			}
+		}        
+       
         /// <summary>
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>

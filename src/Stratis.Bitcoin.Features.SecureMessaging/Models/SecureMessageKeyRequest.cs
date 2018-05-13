@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Models
     /// <summary>
     /// Get private key request.
     /// </summary>
-    public class GetPrivateKeyRequest
+	public class SecureMessageKeyRequest : RequestModel
     {
         public string SenderPrivateKey { get; set; }
 

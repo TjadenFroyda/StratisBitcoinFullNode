@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Models
     /// <summary>
     /// Send secure message request.
     /// </summary>
-    public class SecureMessageRequest : GetPrivateKeyRequest
+    public class SecureMessageRequest : SecureMessageKeyRequest
     {      
         [Required(ErrorMessage = "The message is missing")]
         public string Message { get; set; }
