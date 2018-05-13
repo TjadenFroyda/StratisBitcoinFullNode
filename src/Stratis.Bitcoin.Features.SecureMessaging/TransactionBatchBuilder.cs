@@ -14,10 +14,10 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 // TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging
 {
-	public class TransactionBatchBuilder : IBatchTransactionBuilder
+    public class TransactionBatchBuilder : IBatchTransactionBuilder
     {
-		private List<WalletBuildTransactionModel> transactionModelList;
-		private decimal totalCost;
+        private List<WalletBuildTransactionModel> transactionModelList;
+        private decimal totalCost;
         
         /// <summary>
         /// Initializes a new instance of the
@@ -25,21 +25,21 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// </summary>
         /// <param name="contexts">Contexts.</param>
         /// <param name="fullNode">Full node.</param>
-		public TransactionBatchBuilder(List<TransactionBuildContext> contexts, FullNode fullNode)
+        public TransactionBatchBuilder(List<TransactionBuildContext> contexts, FullNode fullNode)
         {
-			this.totalCost = 0.0M;
-			this.transactionModelList = new List<WalletBuildTransactionModel>();
-			this.buildTransactionModels(contexts, fullNode);
+            this.totalCost = 0.0M;
+            this.transactionModelList = new List<WalletBuildTransactionModel>();
+            this.buildTransactionModels(contexts, fullNode);
         }
 
         /// <summary>
         /// Gets the total fee in satoshis.
         /// </summary>
         /// <returns>The total fee in satoshis.</returns>
-		public int GetTotalCostInSatoshis()
-		{
-			return Decimal.ToInt32(this.totalCost);
-		}
+        public int GetTotalCostInSatoshis()
+        {
+            return Decimal.ToInt32(this.totalCost);
+        }
         
         /// <summary>
         /// Sends the batch.
@@ -47,39 +47,39 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// <returns>The batch.</returns>
         /// <param name="fullNode">Full node.</param>
         public IActionResult SendBatch(FullNode fullNode)
-		{
-			List<IActionResult> txResultList = new List<IActionResult>();
-			foreach(WalletBuildTransactionModel model in this.transactionModelList)
-			{
-				JsonResult result = (JsonResult)fullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(model.Hex));
-				txResultList.Add(fullNode.NodeService<SecureMessagingController>().Json(result));
-			}
-			return fullNode.NodeService<SecureMessagingController>().Json(txResultList);
-		}
+        {
+            List<IActionResult> txResultList = new List<IActionResult>();
+            foreach(WalletBuildTransactionModel model in this.transactionModelList)
+            {
+                JsonResult result = (JsonResult)fullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(model.Hex));
+                txResultList.Add(fullNode.NodeService<SecureMessagingController>().Json(result));
+            }
+            return fullNode.NodeService<SecureMessagingController>().Json(txResultList);
+        }
 
         /// <summary>
         /// Builds the transaction models.
         /// </summary>
         /// <param name="contexts">Contexts.</param>
         /// <param name="fullnode">Fullnode.</param>
-		internal void buildTransactionModels(List<TransactionBuildContext> contexts, FullNode fullnode)
-		{
-			foreach (TransactionBuildContext context in contexts)
-			{
-				Transaction transactionResult = fullnode.NodeService<WalletTransactionHandler>().BuildTransaction(context);
+        internal void buildTransactionModels(List<TransactionBuildContext> contexts, FullNode fullnode)
+        {
+            foreach (TransactionBuildContext context in contexts)
+            {
+                Transaction transactionResult = fullnode.NodeService<WalletTransactionHandler>().BuildTransaction(context);
                 if(!StandardScripts.IsStandardTransaction(transactionResult))
-				{
-					throw new SecureMessageException("TransactionBatchBuilder: Non-standard transaction.");
-				}
-				WalletBuildTransactionModel model = new WalletBuildTransactionModel
-				{
-					Hex = transactionResult.ToHex(),
-					Fee = context.TransactionFee,
-					TransactionId = transactionResult.GetHash()
-				};
-				this.totalCost += (context.TransactionFee.ToDecimal(MoneyUnit.Satoshi) + 0.00000001M);
-				this.transactionModelList.Add(model);
-			}                         
-		}        
+                {
+                    throw new SecureMessageException("TransactionBatchBuilder: Non-standard transaction.");
+                }
+                WalletBuildTransactionModel model = new WalletBuildTransactionModel
+                {
+                    Hex = transactionResult.ToHex(),
+                    Fee = context.TransactionFee,
+                    TransactionId = transactionResult.GetHash()
+                };
+                this.totalCost += (context.TransactionFee.ToDecimal(MoneyUnit.Satoshi) + 0.00000001M);
+                this.transactionModelList.Add(model);
+            }                         
+        }        
     }
 }

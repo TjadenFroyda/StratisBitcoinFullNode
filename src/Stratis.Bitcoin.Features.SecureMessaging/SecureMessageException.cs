@@ -4,10 +4,10 @@
 // TODO: Check coding style guide
 namespace Stratis.Bitcoin.Features.SecureMessaging
 {
-	/// <summary>
+    /// <summary>
     /// Send secure message request exception.
     /// </summary>
-	public class SecureMessageException : Exception
+    public class SecureMessageException : Exception
     {
         public SecureMessageException(string message)
         {

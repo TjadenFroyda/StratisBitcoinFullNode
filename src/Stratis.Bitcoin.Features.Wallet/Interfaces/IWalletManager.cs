@@ -66,6 +66,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <returns>The recovered wallet.</returns>
         Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null);
 
+		/// TODO
+		/// <summary>
+		/// Loads the wallet from private key seed.
+		/// </summary>
+		/// <returns>The wallet from private key seed.</returns>
+		/// <param name="sharedSecret">Shared secret.</param>
+		/// <param name="name">Name.</param>
+		/// <param name="handshakeTime">Handshake time.</param>
+		Wallet LoadWalletFromPrivateKeySeed(Key sharedSecret, string name, DateTime handshakeTime);
+
         /// <summary>
         /// Deletes a wallet.
         /// </summary>

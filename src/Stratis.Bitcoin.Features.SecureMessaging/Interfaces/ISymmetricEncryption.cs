@@ -4,18 +4,18 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Interfaces
 {
     public interface ISymmetricEncryption
     {
-		/// <summary>
+        /// <summary>
         /// Encrypt the specified plaintext.
         /// </summary>
         /// <returns>The encrypt.</returns>
         /// <param name="plaintext">Plaintext.</param>
-		string Encrypt(string plaintext);
+        string Encrypt(string plaintext);
 
         /// <summary>
         /// Decrypt the specified hexCipher.
         /// </summary>
         /// <returns>The decrypt.</returns>
         /// <param name="hexCipher">Hex cipher.</param>
-		string Decrypt(string hexCipher);        
+        string Decrypt(string hexCipher);        
     }
 }

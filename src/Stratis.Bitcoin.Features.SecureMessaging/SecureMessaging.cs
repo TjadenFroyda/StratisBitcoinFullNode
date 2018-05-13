@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
@@ -12,137 +13,94 @@ using System.Collections.Generic;
 // TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging
 {    
-	/// <summary>
-	/// Provides the ability to send secure messages through OP_RETURN messages
-	/// </summary>
-	/// 
-	public class SecureMessaging : ISecureMessaging
-	{
-		private readonly Key myPrivKey;
-		private readonly Key extPubKey;
-		private readonly Key sharedSecret;
-		private readonly ExtKey sharedPrivateKey;
-		private readonly Network network;
-		private readonly ISymmetricEncryption symmetricEncryption;
-		private string blockexplorerurl = "https://chainz.cryptoid.info/explorer/tx.raw.dws?coin=strat&id=";
-		private readonly Wallet.Wallet sharedWallet;
-
-		public SecureMessaging(Key privkey, Key pubkey, Network net)
-		{
-			Guard.NotNull(privkey, nameof(privkey));
-			Guard.NotNull(pubkey, nameof(pubkey));
-			Guard.NotNull(net, nameof(net));
-			this.myPrivKey = privkey;
-			this.extPubKey = pubkey;
-			this.network = net;
-			this.sharedSecret = this.SetSharedSecret(pubkey, privkey);
-			this.symmetricEncryption = new AES(this.sharedSecret.ToHex(this.network));
-			this.sharedPrivateKey = this.SetSharedMasterPrivateKey();
-			this.sharedWallet = this.generateSharedWallet();
-		}
+    /// <summary>
+    /// Provides the ability to send secure messages through OP_RETURN messages
+    /// </summary>
+    /// 
+    public class SecureMessaging : ISecureMessaging
+    {
+        private readonly Key myPrivKey;
+        private readonly PubKey extPubKey;
+        private readonly Key sharedSecretMasterPrivateKey;
+        private readonly ISymmetricEncryption symmetricEncryption;
+        private string blockexplorerurl = "https://chainz.cryptoid.info/explorer/tx.raw.dws?coin=strat&id=";
         
-		/// <summary>
-        /// Get Sharedsecret given the public key of the message sender and the private key of the receiver
-        /// </summary>
-        /// <returns>The shared secret key</returns>
-		private Key SetSharedSecret(Key publickey, Key privatekey)
+        public SecureMessaging(Key privkey, PubKey pubkey)
         {
-			PubKey pk = new PubKey(publickey.ToHex(this.network));
-			Key key = new Key(privatekey.ToBytes());
-			return new Key(Hashes.SHA256(pk.GetSharedPubkey(key).ToBytes()));
+            Guard.NotNull(privkey, nameof(privkey));
+            Guard.NotNull(pubkey, nameof(pubkey));
+            this.myPrivKey = privkey;
+            this.extPubKey = pubkey;
+            this.sharedSecretMasterPrivateKey = this.SetSharedSecretMasterPrivateKey();
+            this.symmetricEncryption = new AES(this.sharedSecretMasterPrivateKey.ToHex(Network.Main));
         }
 
-        private Wallet.Wallet generateSharedWallet()
-		{
-			// TODO: Generate shared wallet
-		}
-
         /// <summary>
-        /// Gets the shared secret.
+        /// Sets the shared secret master private key.
         /// </summary>
-        /// <returns>The shared secret.</returns>
-        public Key GetSharedSecret()
-		{
-			return this.sharedSecret;
-		}
-        
+        /// <returns>The shared secret master private key.</returns>
+        private Key SetSharedSecretMasterPrivateKey()
+        {
+            PubKey pubKey = new PubKey(this.extPubKey.ToHex(Network.Main));
+            Key key = new Key(Encoders.Hex.DecodeData(this.myPrivKey.ToHex(Network.Main)));
+            return new Key(Hashes.SHA256(pubKey.GetSharedPubkey(key).ToBytes()));
+        }   
+                
         /// <summary>
         /// Gets the shared private key.
         /// </summary>
         /// <returns>The shared private key.</returns>
-		public ExtKey GetSharedMasterPrivateKey()
-		{
-			return this.sharedPrivateKey;
-		}
-        
-        /// <summary>
-        /// Sets the shared private key.
-        /// </summary>
-        /// <returns>The shared private key.</returns>
-        private ExtKey SetSharedMasterPrivateKey()
-		{
-			return new ExtKey(this.sharedSecret.ToBytes());
+        public Key GetSharedSecretMasterPrivateKey()
+        {
+            return this.sharedSecretMasterPrivateKey;
         }
-        
-        /// <summary>
-        /// Gets the pub key.
-        /// </summary>
-        /// <returns>The pub key.</returns>
-        public ExtPubKey GetSharedMasterPubKey()
-		{
-			return this.sharedPrivateKey.Neuter();
-		}
 
-        /// <summary>
-        /// Gets the shared address.
-        /// </summary>
-        /// <returns>The shared address.</returns>
         public BitcoinPubKeyAddress GetSharedAddress()
-		{
-			return this.sharedPrivateKey.Neuter().PubKey.GetAddress(this.network);
-		}
-        
+        {
+			return this.sharedSecretMasterPrivateKey.PubKey.GetAddress(Network.Main);
+        }
+      
         /// <summary>
         /// Gets the destination script pub key.
         /// </summary>
         /// <returns>The destination script pub key.</returns>
         public Script GetDestScriptPubKey() 
-		{
-			return this.GetSharedAddress().ScriptPubKey;
-		}
+        {
+            return this.GetSharedAddress().ScriptPubKey;
+        }
 
-		/// <summary>
-		/// Encrypt message using ECDH
-		/// </summary>
-		/// Implementation modified from CryptoLibrary at https://stephenhaunts.com/2013/03/04/cryptography-in-net-advanced-encryption-standard-aes/
+        /// <summary>
+        /// Encrypt message using ECDH
+        /// </summary>
+        /// Implementation modified from CryptoLibrary at https://stephenhaunts.com/2013/03/04/cryptography-in-net-advanced-encryption-standard-aes/
         /// and https://msdn.microsoft.com/en-us/library/system.security.cryptography.aesmanaged(v=vs.110).aspx
-		/// <param name="messageToEncrypt">Plaintext string representation of message to encrypt</param>
-		/// <returns>Hex encoded, AES encrypted message</returns>
-		public string EncryptMessage(string messageToEncrypt)
-		{
-			if (string.IsNullOrEmpty(messageToEncrypt))
+        /// <param name="messageToEncrypt">Plaintext string representation of message to encrypt</param>
+        /// <returns>Hex encoded, AES encrypted message</returns>
+        public string EncryptMessage(string messageToEncrypt)
+        {
+            if (string.IsNullOrEmpty(messageToEncrypt))
             {
-				throw new ArgumentNullException(nameof(messageToEncrypt));
+                throw new ArgumentNullException(nameof(messageToEncrypt));
             }
-			//TODO: Add handling for messages larger than 40 bytes
-			return this.symmetricEncryption.Encrypt(messageToEncrypt);
-		}
+            //TODO: Add handling for messages larger than 40 bytes
+            return this.symmetricEncryption.Encrypt(messageToEncrypt);
+        }
         
         /// <summary>
         /// Decrypt message using ECDH
         /// </summary>
-		/// Implementation modified from CryptoLibrary at https://stephenhaunts.com/2013/03/04/cryptography-in-net-advanced-encryption-standard-aes/
+        /// Implementation modified from CryptoLibrary at https://stephenhaunts.com/2013/03/04/cryptography-in-net-advanced-encryption-standard-aes/
         /// and https://msdn.microsoft.com/en-us/library/system.security.cryptography.aesmanaged(v=vs.110).aspx
         /// <param name="messageToDecrypt">Hex encoded, AES encrypted message</param>
         public string DecryptMessage(string messageToDecrypt)
-		{
-			if (string.IsNullOrEmpty(messageToDecrypt))
+        {
+            if (string.IsNullOrEmpty(messageToDecrypt))
             {
                 throw new ArgumentNullException(nameof(messageToDecrypt));
             }
-			//TODO: Add handling for messages larger than 40 bytes
-			return this.symmetricEncryption.Decrypt(messageToDecrypt);
-		}
+            //TODO: Add handling for messages larger than 40 bytes
+            return this.symmetricEncryption.Decrypt(messageToDecrypt);
+        }
 
         /// <summary>
         /// Builds the OPR eturn message list.
@@ -150,11 +108,11 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// <returns>The OPR eturn message list.</returns>
         /// <param name="plaintextMessage">Plaintext message.</param>
         private List<string> buildOPReturnMessageList(string plaintextMessage) 
-		{
-			string encryptedMessage = this.EncryptMessage(plaintextMessage);
+        {
+            string encryptedMessage = this.EncryptMessage(plaintextMessage);
             List<string> messageList = prepareOPReturnMessageList(encryptedMessage);
-			return messageList;
-		}
+            return messageList;
+        }
 
         /// <summary>
         /// Builds a list of transactions
@@ -165,16 +123,16 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// <param name="destination">Destination.</param>
         /// <param name="sendingPassword">Sending password.</param>
         /// <param name="messageList">Message list.</param>
-		public List<TransactionBuildContext> TransactionBuilder(
-			string sendingWalletName,
+        public List<TransactionBuildContext> TransactionBuilder(
+            string sendingWalletName,
             string sendingAccountName,
             Script destination,
             string sendingPassword,
-			List<string> messageList)
-		{
+            List<string> messageList)
+        {
             List<TransactionBuildContext> contextList = new List<TransactionBuildContext>();
-			foreach(string message in messageList) {                       
-				TransactionBuildContext context = new TransactionBuildContext(
+            foreach(string message in messageList) {                       
+                TransactionBuildContext context = new TransactionBuildContext(
                 new WalletAccountReference(sendingWalletName, sendingAccountName),
                 new List<Recipient> { new Recipient { Amount = "0.00000001", ScriptPubKey = destination } },
                 sendingPassword, message)
@@ -184,12 +142,12 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
                     Shuffle = true
                 };
                 context.FeeType = 0;
-				contextList.Add(context);
-			}
-			return contextList;
-		}
+                contextList.Add(context);
+            }
+            return contextList;
+        }
 
-		/// <summary>
+        /// <summary>
         /// Prepares the OP_Return message list.
         /// </summary>
         /// <returns>The OP_Return message list.</returns>
@@ -203,7 +161,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         }
 
         /// <summary>
-		/// Divides a string into an array of strings of a certain size.
+        /// Divides a string into an array of strings of a certain size.
         /// </summary>
         /// <returns>Chunks of bytes up to the parameter size</returns>
         /// <param name="str">String.</param>
@@ -214,5 +172,5 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
             for (int i = 0; i < str.Length; i += maxChunkSize)
                 yield return str.Substring(i, Math.Min(maxChunkSize, str.Length - i));
         }
-	}
+    }
 }

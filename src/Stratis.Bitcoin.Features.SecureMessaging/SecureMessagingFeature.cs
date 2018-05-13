@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
     /// <summary>
     /// Secure messaging feature.
     /// </summary>
-	public class SecureMessagingFeature : FullNodeFeature 
+    public class SecureMessagingFeature : FullNodeFeature 
     {
 
         /// <summary>
@@ -28,9 +28,9 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// <see cref="T:Stratis.Bitcoin.Features.TestFeature.SecureMessagingFeature"/> class.
         /// </summary>
         /// <param name="loggerFactory">Logger factory.</param>
-		public SecureMessagingFeature(ILoggerFactory loggerFactory) 
+        public SecureMessagingFeature(ILoggerFactory loggerFactory) 
         {
-			Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName); 
         }
 
@@ -50,12 +50,12 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
-                    .AddFeature<SecureMessagingFeature>()
-                    .DependOn<WalletFeature>() 
-                    .FeatureServices(services =>
-                    {
-                        services.AddSingleton<SecureMessagingController>(); 
-                    });
+                .AddFeature<SecureMessagingFeature>()
+                .DependOn<WalletFeature>() 
+                .FeatureServices(services =>
+                {
+                    services.AddSingleton<SecureMessagingController>(); 
+                });
             });
             return fullNodeBuilder;
         }

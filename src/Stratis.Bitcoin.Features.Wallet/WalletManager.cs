@@ -342,6 +342,55 @@ namespace Stratis.Bitcoin.Features.Wallet
             return wallet;
         }
 
+        /// <summary>
+        /// Loads the wallet from private key seed.
+        /// </summary>
+        /// <returns>The wallet from private key seed.</returns>
+        /// <param name="sharedSecret">Shared secret.</param>
+        /// <param name="name">Name.</param>
+        /// <param name="handshakeTime">Handshake time.</param>
+		public Wallet LoadWalletFromPrivateKeySeed(Key sharedSecret, string name, DateTime handshakeTime)
+        {
+			Guard.NotNull(sharedSecret, nameof(sharedSecret));
+            Guard.NotEmpty(name, nameof(name));
+            this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
+
+			ExtKey masterKey = new ExtKey(sharedSecret.ToHex(Network.Main));
+
+            // Create a wallet file.
+			string encryptedSeed = sharedSecret.ToHex(Network.Main);
+            Wallet wallet = this.GenerateWalletFile(name, encryptedSeed, masterKey.ChainCode, handshakeTime);
+
+            // Generate multiple accounts and addresses from the get-go.
+            for (int i = 0; i < WalletRecoveryAccountsCount; i++)
+            {
+                HdAccount account = wallet.AddNewAccount(sharedSecret.ToHex(this.network), this.coinType, this.dateTimeProvider.GetTimeOffset());
+                IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer);
+                IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
+                this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
+            }
+
+            // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
+            // However, if the chain is still downloading when the user restores a wallet,
+            // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet may not be known.
+            if (this.chain.IsDownloaded())
+            {
+				int blockSyncStart = this.chain.GetHeightAtTime(handshakeTime);
+                this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
+            }
+            else
+            {
+				this.UpdateWhenChainDownloaded(new[] { wallet }, handshakeTime);
+            }
+
+            // Save the changes to the file and add addresses to be tracked.
+            this.SaveWallet(wallet);
+            this.Load(wallet);
+
+            this.logger.LogTrace("(-)");
+            return wallet;
+        }
+
         /// <inheritdoc />
         public HdAccount GetUnusedAccount(string walletName, string password)
         {
