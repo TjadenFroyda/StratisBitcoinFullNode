@@ -22,17 +22,19 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         private readonly Key myPrivKey;
         private readonly PubKey extPubKey;
         private readonly Key sharedSecretMasterPrivateKey;
+		private readonly Network network;
         private readonly ISymmetricEncryption symmetricEncryption;
         private string blockexplorerurl = "https://chainz.cryptoid.info/explorer/tx.raw.dws?coin=strat&id=";
         
-        public SecureMessaging(Key privkey, PubKey pubkey)
+        public SecureMessaging(Key privkey, PubKey pubkey, Network net)
         {
             Guard.NotNull(privkey, nameof(privkey));
             Guard.NotNull(pubkey, nameof(pubkey));
             this.myPrivKey = privkey;
             this.extPubKey = pubkey;
+			this.network = net;
             this.sharedSecretMasterPrivateKey = this.SetSharedSecretMasterPrivateKey();
-            this.symmetricEncryption = new AES(this.sharedSecretMasterPrivateKey.ToHex(Network.Main));
+            this.symmetricEncryption = new AES(this.sharedSecretMasterPrivateKey.ToHex(this.network));
         }
 
         /// <summary>
@@ -41,8 +43,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// <returns>The shared secret master private key.</returns>
         private Key SetSharedSecretMasterPrivateKey()
         {
-            PubKey pubKey = new PubKey(this.extPubKey.ToHex(Network.Main));
-            Key key = new Key(Encoders.Hex.DecodeData(this.myPrivKey.ToHex(Network.Main)));
+            PubKey pubKey = new PubKey(this.extPubKey.ToHex(this.network));
+            Key key = new Key(Encoders.Hex.DecodeData(this.myPrivKey.ToHex(this.network)));
             return new Key(Hashes.SHA256(pubKey.GetSharedPubkey(key).ToBytes()));
         }   
                 
@@ -57,7 +59,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
 
         public BitcoinPubKeyAddress GetSharedAddress()
         {
-			return this.sharedSecretMasterPrivateKey.PubKey.GetAddress(Network.Main);
+			return this.sharedSecretMasterPrivateKey.PubKey.GetAddress(this.network);
         }
       
         /// <summary>

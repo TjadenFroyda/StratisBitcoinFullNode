@@ -12,7 +12,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.SecureMessaging.Tests")]
 
 // TODO: Add Logging
 // TODO: Add/improve comments
@@ -82,7 +84,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         {
             Key privateKey = GetPrivateKey(request);
             PubKey receiverPubKey = request.ReceiverPublicKey == null ? new PubKey(request.ReceiverPublicKey) : throw new SecureMessageException("Please enter the receiver's public key");
-            this.secureMessaging = new SecureMessaging(privateKey, receiverPubKey);
+            this.secureMessaging = new SecureMessaging(privateKey, receiverPubKey, this.network);
             if (action == Action.Encrypt)
             {
                 return this.secureMessaging.EncryptMessage(request.Message);

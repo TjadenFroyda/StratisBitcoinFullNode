@@ -7,6 +7,7 @@ using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Crypto;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -349,22 +350,26 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="sharedSecret">Shared secret.</param>
         /// <param name="name">Name.</param>
         /// <param name="handshakeTime">Handshake time.</param>
-		public Wallet LoadWalletFromPrivateKeySeed(Key sharedSecret, string name, DateTime handshakeTime)
+		public Wallet LoadWalletFromPrivateKeySeed(Key sharedSecret, string name, DateTime handshakeTime, string passphrase = null)
         {
 			Guard.NotNull(sharedSecret, nameof(sharedSecret));
             Guard.NotEmpty(name, nameof(name));
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
+                       
+			ExtKey masterKey = new ExtKey(sharedSecret.ToHex(this.network));
 
-			ExtKey masterKey = new ExtKey(sharedSecret.ToHex(Network.Main));
+			// For now the passphrase is set to be the wallet name by default.
+            if (passphrase == null)
+                passphrase = name;
 
             // Create a wallet file.
-			string encryptedSeed = sharedSecret.ToHex(Network.Main);
+			string encryptedSeed = masterKey.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
             Wallet wallet = this.GenerateWalletFile(name, encryptedSeed, masterKey.ChainCode, handshakeTime);
 
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
-                HdAccount account = wallet.AddNewAccount(sharedSecret.ToHex(this.network), this.coinType, this.dateTimeProvider.GetTimeOffset());
+				HdAccount account = wallet.AddNewAccount(passphrase, this.coinType, this.dateTimeProvider.GetTimeOffset());
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));

@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 		/// <param name="sharedSecret">Shared secret.</param>
 		/// <param name="name">Name.</param>
 		/// <param name="handshakeTime">Handshake time.</param>
-		Wallet LoadWalletFromPrivateKeySeed(Key sharedSecret, string name, DateTime handshakeTime);
+		Wallet LoadWalletFromPrivateKeySeed(Key sharedSecret, string name, DateTime handshakeTime, string passphrase);
 
         /// <summary>
         /// Deletes a wallet.

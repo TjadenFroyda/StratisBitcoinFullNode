@@ -1,7 +1,5 @@
 ﻿using DBreeze.Utils;
 using NBitcoin;
-using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using System;
 using Xunit;
@@ -17,12 +15,14 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
     /// </summary>
     public class SecureMessagingTests : LogsTestBase
     {
+		private Network network;
         /// <summary>
         /// Initializes a new instance of the
         /// <see cref="T:Stratis.Bitcoin.Features.SecureMessaging.Tests.SecureMessagingTests"/> class.
         /// </summary>
         public SecureMessagingTests()
-        {         
+        {
+			this.network = Network.StratisMain;	
         }
 
         [Fact]
@@ -54,11 +54,11 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             string expectedKey = "a461392f592ff4292bfce732d808a07f1bc3f49c9a66a40d50761ffb8b2325f6";
             
             // Act
-            SecureMessaging Bob1SM = new SecureMessaging(Bob1.GetPrivateKey(), Alice1.GetPublicKey());
+            SecureMessaging Bob1SM = new SecureMessaging(Bob1.GetPrivateKey(), Alice1.GetPublicKey(), this.network);
 
 
             // Assert
-            Assert.Equal(Bob1SM.GetSharedSecretMasterPrivateKey().ToHex(Network.Main), expectedKey);
+            Assert.Equal(Bob1SM.GetSharedSecretMasterPrivateKey().ToHex(Network.StratisMain), expectedKey);
         }
 
         /// <summary>
@@ -80,10 +80,10 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             string expectedKey = "1d664ba11d3925cfcd938b2ef131213ba4ca986822944d0a7616b34027738e7c";
 
             // Act
-            SecureMessaging Bob2SM = new SecureMessaging(Bob2.GetPrivateKey(), Alice2.GetPublicKey());
+			SecureMessaging Bob2SM = new SecureMessaging(Bob2.GetPrivateKey(), Alice2.GetPublicKey(), this.Network);
 
             // Assert
-            Assert.Equal(Bob2SM.GetSharedSecretMasterPrivateKey().ToHex(Network.Main), expectedKey);
+            Assert.Equal(Bob2SM.GetSharedSecretMasterPrivateKey().ToHex(Network.StratisMain), expectedKey);
         }
 
         /// <summary>
@@ -105,10 +105,10 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             string expectedKey = "7fcfa754a40ceaabee5cd3df1a99ee2e5d2c027fdcbd8e437d9be757ea58708f";
 
             // Act
-            SecureMessaging Bob3SM = new SecureMessaging(Bob3.GetPrivateKey(), Alice3.GetPublicKey());
+			SecureMessaging Bob3SM = new SecureMessaging(Bob3.GetPrivateKey(), Alice3.GetPublicKey(), this.network);
 
             // Assert
-            Assert.Equal(Bob3SM.GetSharedSecretMasterPrivateKey().ToHex(Network.Main), expectedKey);
+            Assert.Equal(Bob3SM.GetSharedSecretMasterPrivateKey().ToHex(Network.StratisMain), expectedKey);
         }
 
         /// <summary>
@@ -127,13 +127,13 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
                 pub: "049788818055d962297edbeb50431b8c44f545714bf0ce5471159cecd86c78efe2742778ad242ac325fb48217351f70782db8bf50f633b59f2bdbdcd1a08f1f7aa",
                 priv: "d57cc0624f024149c300c0897ac917c58142be3d6346797651c85ca8dbae05f8"
             );
-            SecureMessaging BobSM = new SecureMessaging(Bob.GetPrivateKey(), Alice.GetPublicKey());
-            SecureMessaging AliceSM = new SecureMessaging(Alice.GetPrivateKey(), Bob.GetPublicKey());
+			SecureMessaging BobSM = new SecureMessaging(Bob.GetPrivateKey(), Alice.GetPublicKey(), this.network);
+			SecureMessaging AliceSM = new SecureMessaging(Alice.GetPrivateKey(), Bob.GetPublicKey(), this.network);
 
             // Act and Assert
             Assert.Equal(
-                BobSM.GetSharedSecretMasterPrivateKey().ToHex(Network.Main),
-                AliceSM.GetSharedSecretMasterPrivateKey().ToHex(Network.Main)
+                BobSM.GetSharedSecretMasterPrivateKey().ToHex(Network.StratisMain),
+                AliceSM.GetSharedSecretMasterPrivateKey().ToHex(Network.StratisMain)
             );
         }
         
@@ -154,8 +154,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
                 priv: "d57cc0624f024149c300c0897ac917c58142be3d6346797651c85ca8dbae05f8"
             );
             string BobPlainTextMessage = "Have a great day Alice!";
-            SecureMessaging BobSM = new SecureMessaging(Bob.GetPrivateKey(), Alice.GetPublicKey());
-            SecureMessaging AliceSM = new SecureMessaging(Alice.GetPrivateKey(), Bob.GetPublicKey());
+			SecureMessaging BobSM = new SecureMessaging(Bob.GetPrivateKey(), Alice.GetPublicKey(), this.network);
+			SecureMessaging AliceSM = new SecureMessaging(Alice.GetPrivateKey(), Bob.GetPublicKey(), this.network);
             
             // Act
             string BobCipher = BobSM.EncryptMessage(BobPlainTextMessage);
@@ -181,8 +181,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
                 pub: "049788818055d962297edbeb50431b8c44f545714bf0ce5471159cecd86c78efe2742778ad242ac325fb48217351f70782db8bf50f633b59f2bdbdcd1a08f1f7aa",
                 priv: "d57cc0624f024149c300c0897ac917c58142be3d6346797651c85ca8dbae05f8"
             );
-            SecureMessaging BobSM = new SecureMessaging(Bob.GetPrivateKey(), Alice.GetPublicKey());
-            SecureMessaging AliceSM = new SecureMessaging(Alice.GetPrivateKey(), Bob.GetPublicKey());
+			SecureMessaging BobSM = new SecureMessaging(Bob.GetPrivateKey(), Alice.GetPublicKey(), this.network);
+			SecureMessaging AliceSM = new SecureMessaging(Alice.GetPrivateKey(), Bob.GetPublicKey(), this.network);
 
             // Act
             string AliceCipher = AliceSM.EncryptMessage(AlicePlainTextMessage);
@@ -212,8 +212,8 @@ Quisque tellus dolor, tempor eu tortor sit amet, finibus tincidunt augue.Etiam o
                 pub: "049788818055d962297edbeb50431b8c44f545714bf0ce5471159cecd86c78efe2742778ad242ac325fb48217351f70782db8bf50f633b59f2bdbdcd1a08f1f7aa",
                 priv: "d57cc0624f024149c300c0897ac917c58142be3d6346797651c85ca8dbae05f8"
             );
-            SecureMessaging BobSM = new SecureMessaging(Bob.GetPrivateKey(), Alice.GetPublicKey());
-            SecureMessaging AliceSM = new SecureMessaging(Alice.GetPrivateKey(), Bob.GetPublicKey());
+			SecureMessaging BobSM = new SecureMessaging(Bob.GetPrivateKey(), Alice.GetPublicKey(), this.network);
+			SecureMessaging AliceSM = new SecureMessaging(Alice.GetPrivateKey(), Bob.GetPublicKey(), this.network);
 
             // Act
             string AliceCipher = AliceSM.EncryptMessage(AlicePlainTextMessage);
@@ -243,14 +243,14 @@ Quisque tellus dolor, tempor eu tortor sit amet, finibus tincidunt augue.Etiam o
                 pub: "040c9ec013d34f362445ec1f3b87feaf857cee2ae45d8506c62a53ecb23147219993ee8dec6e1eaf25edf3757871df344636b1defe2b31b06ea5858e2c529db4d2",
                 priv: "3e4af283ebb2716f0212b7079466f3b75cc3d4189877ab7953e48c826eebdd4d"
             );
-            SecureMessaging BobSM = new SecureMessaging(Bob.GetPrivateKey(), Alice.GetPublicKey());
-            SecureMessaging AliceSM = new SecureMessaging(Alice.GetPrivateKey(), Bob.GetPublicKey());
+			SecureMessaging BobSM = new SecureMessaging(Bob.GetPrivateKey(), Alice.GetPublicKey(), this.network);
+			SecureMessaging AliceSM = new SecureMessaging(Alice.GetPrivateKey(), Bob.GetPublicKey(), this.network);
 
             // Act
             string AliceCipher = AliceSM.EncryptMessage(AlicePlainTextMessage);
 
             // Assert
-            SecureMessaging ChadSM = new SecureMessaging(Chad.GetPrivateKey(), Alice.GetPublicKey());
+			SecureMessaging ChadSM = new SecureMessaging(Chad.GetPrivateKey(), Alice.GetPublicKey(), this.network);
             try
             {
                 string ChadDecryptedPlainTextMessage = ChadSM.DecryptMessage(AliceCipher);
