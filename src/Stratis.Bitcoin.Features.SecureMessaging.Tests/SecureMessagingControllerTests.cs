@@ -45,11 +45,10 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         }
  
         /// <summary>
-        /// Added a method to WalletManager.cs in Stratis.Bitcoin.Features.Wallet
-        /// This method tests to make sure it works as intended. 
+        /// Overloaded recover wallet method in WalletManager.cs. This checks to make sure it works as intended.
         /// </summary>
         [Fact]
-        public void TestWalletCreationFromSeed()
+        public void TestWalletRecoverFromSeed()
         {
             // Set up
             DataFolder dataFolder = CreateDataFolder(this);
@@ -76,8 +75,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             string passphrase = "This is an awesome passphrase";
  
             // Act
-            Wallet.Wallet AliceWallet = walletManager.LoadWalletFromPrivateKeySeed(
-                this.Alice.GetPrivateKey(),
+            Wallet.Wallet AliceWallet = walletManager.RecoverWallet(
+                new ExtKey(this.Alice.GetPrivateKeyHex()),
                 "AliceWallet",
                 DateTime.Now,
                 passphrase
@@ -120,8 +119,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
                 DateTimeProvider.Default
             );
             string passphrase = "This is an awesome passphrase";
-            Wallet.Wallet AliceWallet = walletManager.LoadWalletFromPrivateKeySeed(
-                this.Alice.GetPrivateKey(),
+            Wallet.Wallet AliceWallet = walletManager.RecoverWallet(
+                new ExtKey(this.Alice.GetPrivateKeyHex()),
                 "AliceWallet",
                 DateTime.Now,
                 passphrase

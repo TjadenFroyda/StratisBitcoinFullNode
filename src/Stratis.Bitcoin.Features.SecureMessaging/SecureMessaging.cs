@@ -81,7 +81,6 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
             {
                 throw new ArgumentNullException(nameof(messageToEncrypt));
             }
-            //TODO: Add handling for messages larger than 40 bytes
             return this.symmetricEncryption.Encrypt(messageToEncrypt);
         }
 
@@ -97,18 +96,27 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
             {
                 throw new ArgumentNullException(nameof(messageToDecrypt));
             }
-            //TODO: Add handling for messages larger than 40 bytes
             return this.symmetricEncryption.Decrypt(messageToDecrypt);
         }
 
         /// <summary>
-        /// Builds the OPR eturn message list.
+        /// Builds the OPReturn message list.
         /// </summary>
-        /// <returns>The OPR eturn message list.</returns>
+        /// <returns>The OPReturn message list.</returns>
         /// <param name="plaintextMessage">Plaintext message.</param>
         private List<string> buildOPReturnMessageList(string plaintextMessage) 
         {
-            string encryptedMessage = this.EncryptMessage(plaintextMessage);
+            string compressedString;
+            using (MemoryStream outputStream = new MemoryStream())
+            {
+                using (GZipStream gZipStream = new GZipStream(outputStream, CompressionMode.Compress))
+                {
+                    gZipStream.Write(Encoding.UTF8.GetBytes(plaintextMessage), 0, Encoding.UTF8.GetBytes(plaintextMessage).Length);
+                }
+                byte[] outputBytes = outputStream.ToArray();
+                compressedString = Convert.ToBase64String(outputBytes);
+            }
+            string encryptedMessage = this.EncryptMessage(compressedString);
             List<string> messageList = prepareOPReturnMessageList(encryptedMessage);
             return messageList;
         }

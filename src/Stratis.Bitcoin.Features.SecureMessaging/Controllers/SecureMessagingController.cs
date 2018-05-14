@@ -116,15 +116,14 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         }
         
         /// <summary>
-        /// TODO
         /// </summary>
-        /// <param name="sharedSecret"></param>
-        /// <param name="name"></param>
-        /// <param name="handshakeTime"></param>
+        /// <param name="sharedSecret">The derived shared secret key</param>
+        /// <param name="name">The name of the new conversation wallet</param>
+        /// <param name="handshakeTime">The time of the handshake to exchange pubkeys (or now)</param>
         /// <returns></returns>
-        internal Wallet.Wallet LoadWalletFromPrivateSeed(Key sharedSecret, string name, DateTime handshakeTime)
+        internal Wallet.Wallet RecoverWalletFromSeed(Key sharedSecret, string name, DateTime handshakeTime)
         {
-            return this.fullNode.NodeService<WalletManager>().LoadWalletFromPrivateKeySeed(sharedSecret, name, handshakeTime);
+            return this.fullNode.NodeService<WalletManager>().RecoverWallet(sharedSecret, name, handshakeTime);
         }
         
         /// <summary>
