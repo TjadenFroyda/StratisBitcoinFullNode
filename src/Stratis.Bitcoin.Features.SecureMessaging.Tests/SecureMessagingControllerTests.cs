@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
     {
         private TestPerson Alice;
         private TestPerson Bob;
-		private Network network;
+        private Network network;
         private Wallet.Wallet AliceWallet;
         private Wallet.Wallet BobWallet;
 
@@ -33,23 +33,22 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
                 pub: "04bc888f2739cc9c9a5d595bf4da54a1fb6854c269f8e8ab0d3e94f71ba37d75a84b196ce0801eb13b94a181c4c34ed15f2ec1c5fd1899d8953a546b8c164d18c6",
                 priv: "6215a59058ba689889a3aa0e32d0f686ddb7a3ffae003376f4d0744eb7b61b19"
             );
-
             this.Bob = new TestPerson(
                 pub: "049788818055d962297edbeb50431b8c44f545714bf0ce5471159cecd86c78efe2742778ad242ac325fb48217351f70782db8bf50f633b59f2bdbdcd1a08f1f7aa",
                 priv: "d57cc0624f024149c300c0897ac917c58142be3d6346797651c85ca8dbae05f8"
             );
-			this.network = Network.StratisMain;
+            this.network = Network.StratisMain;
         }
-
+ 
         /// <summary>
         /// Added a method to WalletManager.cs in Stratis.Bitcoin.Features.Wallet
-		/// This method tests to make sure it works as intended. 
+        /// This method tests to make sure it works as intended. 
         /// </summary>
         [Fact]
         public void TestWalletCreationFromSeed()
-        {         
+        {
             // Set up
-			DataFolder dataFolder = CreateDataFolder(this);
+            DataFolder dataFolder = CreateDataFolder(this);
             var chain = new ConcurrentChain(this.network);
             var nonce = RandomUtils.GetUInt32();
             var block = new Block();
@@ -58,37 +57,45 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
             block.Header.Nonce = nonce;
             chain.SetTip(block.Header);
-
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
-                                                    dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
-			string passphrase = "This is an awesome passphrase";
-
-			// Act
-			Wallet.Wallet AliceWallet = walletManager.LoadWalletFromPrivateKeySeed(
-				Alice.GetPrivateKey(),
-				"AliceWallet",
-				DateTime.Now,
-				passphrase
-			);
-
-			ExtKey expectedExtKey = new ExtKey(Alice.GetPrivateKeyHex());
-			string expectedEncryptedSeed = expectedExtKey.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
-
+            var walletManager = new WalletManager(
+                this.LoggerFactory.Object, 
+                this.network, 
+                chain, 
+                NodeSettings.Default(), 
+                new Mock<WalletSettings>().Object,
+                dataFolder, 
+                new Mock<IWalletFeePolicy>().Object, 
+                new Mock<IAsyncLoopFactory>().Object, 
+                new NodeLifetime(), 
+                DateTimeProvider.Default
+            );
+            string passphrase = "This is an awesome passphrase";
+ 
+            // Act
+            Wallet.Wallet AliceWallet = walletManager.LoadWalletFromPrivateKeySeed(
+                Alice.GetPrivateKey(),
+                "AliceWallet",
+                DateTime.Now,
+                passphrase
+            );
+ 
+            ExtKey expectedExtKey = new ExtKey(Alice.GetPrivateKeyHex());
+            string expectedEncryptedSeed = expectedExtKey.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
+ 
             // Assert
-			Assert.Equal("AliceWallet", AliceWallet.Name);
-			Assert.Equal(this.network, AliceWallet.Network);
-			Assert.Equal(expectedEncryptedSeed, AliceWallet.EncryptedSeed);           
+            Assert.Equal("AliceWallet", AliceWallet.Name);
+            Assert.Equal(this.network, AliceWallet.Network);
+            Assert.Equal(expectedEncryptedSeed, AliceWallet.EncryptedSeed);           
         }
 
-		// Test retrieving a private key from Alice's wallet without using  
+        // Test retrieving a private key from Alice's wallet without using  
         // DumpPrivKey is a RPC call. Seeking to avoid RPC based calls as not all nodes 
         // will be running RPC and API is more modern approach.
         [Fact]
         public void TestWalletDumpPrivKeyWithoutRPC()
-		{
-			// Set up
-			DataFolder dataFolder = CreateDataFolder(this);
-
+        {
+            // Set up
+            DataFolder dataFolder = CreateDataFolder(this);
             var chain = new ConcurrentChain(network);
             var nonce = RandomUtils.GetUInt32();
             var block = new Block();
@@ -97,49 +104,43 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
             block.Header.Nonce = nonce;
             chain.SetTip(block.Header);
-
-			WalletManager walletManager = new WalletManager(
-				this.LoggerFactory.Object, this.network, 
-				chain, 
-				NodeSettings.Default(), 
-				new Mock<WalletSettings>().Object,
-				dataFolder, 
-				new Mock<IWalletFeePolicy>().Object, 
-				new Mock<IAsyncLoopFactory>().Object, 
-				new NodeLifetime(), 
-				DateTimeProvider.Default
-			);
+            WalletManager walletManager = new WalletManager(
+                this.LoggerFactory.Object, this.network, 
+                chain, 
+                NodeSettings.Default(), 
+                new Mock<WalletSettings>().Object,
+                dataFolder, 
+                new Mock<IWalletFeePolicy>().Object, 
+                new Mock<IAsyncLoopFactory>().Object, 
+                new NodeLifetime(), 
+                DateTimeProvider.Default
+            );
             string passphrase = "This is an awesome passphrase";
-
-            // Act
             Wallet.Wallet AliceWallet = walletManager.LoadWalletFromPrivateKeySeed(
                 Alice.GetPrivateKey(),
                 "AliceWallet",
                 DateTime.Now,
                 passphrase
             );
-
-			SecureMessagingController secureMessagingController =  new SecureMessagingController(
-				new Mock<FullNode>().Object,
-				this.LoggerFactory.Object, 
-				walletManager, 
+            SecureMessagingController secureMessagingController =  new SecureMessagingController(
+                new Mock<FullNode>().Object,
+                this.LoggerFactory.Object, 
+                walletManager, 
                 this.network,
-				new Mock<IWalletTransactionHandler>().Object
-			);
-
-			GetPrivateKeyRequest myRequest = new GetPrivateKeyRequest
-			{
-				WalletName = "AliceWallet",
-				Passphrase = passphrase
-			};
-                     
+                new Mock<IWalletTransactionHandler>().Object
+            );
+            GetPrivateKeyRequest myRequest = new GetPrivateKeyRequest
+            {
+                WalletName = "AliceWallet",
+                Passphrase = passphrase
+            };
             // Act
-			Key dumpkey = secureMessagingController.GetPrivateKey(myRequest);
+            Key dumpkey = secureMessagingController.GetPrivateKey(myRequest);
             Key expectedKey = Alice.GetPrivateKey();
 
-			// Assert
-			Assert.Equal(expectedKey, dumpkey);
-		}
+            // Assert
+            Assert.Equal(expectedKey, dumpkey);
+        }
 
         [Fact]
         public void TestSharedSecretGeneration()

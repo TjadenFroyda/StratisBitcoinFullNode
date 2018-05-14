@@ -19,12 +19,12 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
     {
         private readonly int saltSize = 32;
         private string sharedSecret;
-
+ 
         public AES(string sharedSecret)
         {
             Guard.NotNull(sharedSecret, nameof(sharedSecret));
             this.sharedSecret = sharedSecret;
-        }      
+        }
 
         /// <summary>
         /// Encrypt the specified plainText.
@@ -68,13 +68,10 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
             }
             catch (Exception e)
             {
-                throw new System.Security.Cryptography.CryptographicException(
-                    "Invalid decryption key", e
-                );
+                throw new System.Security.Cryptography.CryptographicException("Invalid decryption key", e);
             }
-
         }
-        
+ 
         /// <summary>
         /// Encrypts the string to bytes aes.
         /// </summary>
@@ -103,16 +100,12 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
             {
                 throw new ArgumentNullException(nameof(IV));
             }
-
             byte[] cipherBytes;
-
             using (AesManaged aesAlg = new AesManaged())
             {
                 aesAlg.KeySize = 256;                
-
                 // Create a decrytor to perform the stream transform.
                 ICryptoTransform encryptor = aesAlg.CreateEncryptor(Key, IV);
-
                 // Create the streams used for encryption.
                 using (MemoryStream msEncrypt = new MemoryStream())
                 {
@@ -130,7 +123,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
             Array.Copy(cipherBytes, 0, SaltBytes, this.saltSize, cipherBytes.Length);
             return SaltBytes;
         }
-        
+ 
         /// <summary>
         /// Decrypts the string from bytes aes.
         /// </summary>
@@ -154,14 +147,11 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
                 throw new ArgumentNullException(nameof(IV));
             }
             string plaintext = null;
-            
             using (AesManaged aesAlg = new AesManaged())
             {
                 aesAlg.Key = Key;
                 aesAlg.IV = IV;
-                
                 ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-                
                 using (MemoryStream msDecrypt = new MemoryStream(cipherTextBytes))
                 {
                     using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))

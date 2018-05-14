@@ -123,13 +123,13 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             try
             {
                 TransactionBatchBuilder batchBuilder = BuildTransactionBatch(request);
-                return Json(batchBuilder.GetTotalCostInSatoshis());                
+                return Json(batchBuilder.GetTotalCostInSatoshis());
             }
             catch (Exception e)
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
-        }              
+        }
     }
 }

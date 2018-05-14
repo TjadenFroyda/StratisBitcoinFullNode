@@ -3,7 +3,6 @@ using Stratis.Bitcoin.Tests.Common.Logging;
 
 // TODO: Add Logging
 // TODO: Add/improve Comments
-// TODO: Check coding style guide
 // TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
 {

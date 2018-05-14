@@ -12,7 +12,7 @@ using System.Collections.Generic;
 // TODO: Check coding style guide
 // TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging
-{    
+{
     /// <summary>
     /// Provides the ability to send secure messages through OP_RETURN messages
     /// </summary>
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         private readonly Key myPrivKey;
         private readonly PubKey extPubKey;
         private readonly Key sharedSecretMasterPrivateKey;
-		private readonly Network network;
+        private readonly Network network;
         private readonly ISymmetricEncryption symmetricEncryption;
         private string blockexplorerurl = "https://chainz.cryptoid.info/explorer/tx.raw.dws?coin=strat&id=";
         
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
             Guard.NotNull(pubkey, nameof(pubkey));
             this.myPrivKey = privkey;
             this.extPubKey = pubkey;
-			this.network = net;
+            this.network = net;
             this.sharedSecretMasterPrivateKey = this.SetSharedSecretMasterPrivateKey();
             this.symmetricEncryption = new AES(this.sharedSecretMasterPrivateKey.ToHex(this.network));
         }
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
             Key key = new Key(Encoders.Hex.DecodeData(this.myPrivKey.ToHex(this.network)));
             return new Key(Hashes.SHA256(pubKey.GetSharedPubkey(key).ToBytes()));
         }   
-                
+
         /// <summary>
         /// Gets the shared private key.
         /// </summary>
@@ -59,9 +59,9 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
 
         public BitcoinPubKeyAddress GetSharedAddress()
         {
-			return this.sharedSecretMasterPrivateKey.PubKey.GetAddress(this.network);
+            return this.sharedSecretMasterPrivateKey.PubKey.GetAddress(this.network);
         }
-      
+ 
         /// <summary>
         /// Gets the destination script pub key.
         /// </summary>
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
             //TODO: Add handling for messages larger than 40 bytes
             return this.symmetricEncryption.Encrypt(messageToEncrypt);
         }
-        
+
         /// <summary>
         /// Decrypt message using ECDH
         /// </summary>
@@ -117,39 +117,6 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         }
 
         /// <summary>
-        /// Builds a list of transactions
-        /// </summary>
-        /// <returns>The builder.</returns>
-        /// <param name="sendingWalletName">Sending wallet name.</param>
-        /// <param name="sendingAccountName">Sending account name.</param>
-        /// <param name="destination">Destination.</param>
-        /// <param name="sendingPassword">Sending password.</param>
-        /// <param name="messageList">Message list.</param>
-        public List<TransactionBuildContext> TransactionBuilder(
-            string sendingWalletName,
-            string sendingAccountName,
-            Script destination,
-            string sendingPassword,
-            List<string> messageList)
-        {
-            List<TransactionBuildContext> contextList = new List<TransactionBuildContext>();
-            foreach(string message in messageList) {                       
-                TransactionBuildContext context = new TransactionBuildContext(
-                new WalletAccountReference(sendingWalletName, sendingAccountName),
-                new List<Recipient> { new Recipient { Amount = "0.00000001", ScriptPubKey = destination } },
-                sendingPassword, message)
-                {
-                    TransactionFee = null,
-                    MinConfirmations = 0,
-                    Shuffle = true
-                };
-                context.FeeType = 0;
-                contextList.Add(context);
-            }
-            return contextList;
-        }
-
-        /// <summary>
         /// Prepares the OP_Return message list.
         /// </summary>
         /// <returns>The OP_Return message list.</returns>
@@ -170,9 +137,10 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// <param name="maxChunkSize">Max chunk size.</param>
         private static IEnumerable<string> ChunksUpto(string str, int maxChunkSize)
         {
-
             for (int i = 0; i < str.Length; i += maxChunkSize)
+            {
                 yield return str.Substring(i, Math.Min(maxChunkSize, str.Length - i));
+            }
         }
     }
 }

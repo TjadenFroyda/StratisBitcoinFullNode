@@ -342,34 +342,36 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
             return wallet;
         }
-
+ 
         /// <summary>
-        /// Loads the wallet from private key seed.
+        /// Loads a wallet from private key seed and encrypts it with the given passphrase.
+        /// An alternative method for loading a wallet, implemented in the SecureMessaging Feature, where the
+        /// share secret private key is used to generate a shared wallet. 
         /// </summary>
-        /// <returns>The wallet from private key seed.</returns>
-        /// <param name="sharedSecret">Shared secret.</param>
-        /// <param name="name">Name.</param>
-        /// <param name="handshakeTime">Handshake time.</param>
-		public Wallet LoadWalletFromPrivateKeySeed(Key sharedSecret, string name, DateTime handshakeTime, string passphrase = null)
+        /// <returns>A wallet generated from a private key seed</returns>
+        /// <param name="seed">Seed used to generate wallet.</param>
+        /// <param name="name">Name of the wallet</param>
+        /// <param name="handshakeTime">Handshake time is synonymous with creation time</param>
+        public Wallet LoadWalletFromPrivateKeySeed(Key seed, string name, DateTime handshakeTime, string passphrase = null)
         {
-			Guard.NotNull(sharedSecret, nameof(sharedSecret));
+            Guard.NotNull(seed, nameof(seed));
             Guard.NotEmpty(name, nameof(name));
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
                        
-			ExtKey masterKey = new ExtKey(sharedSecret.ToHex(this.network));
+            ExtKey masterKey = new ExtKey(seed.ToHex(this.network));
 
-			// For now the passphrase is set to be the wallet name by default.
+            // If no passphrase is given, will default to the wallet's name.
             if (passphrase == null)
                 passphrase = name;
 
-            // Create a wallet file.
-			string encryptedSeed = masterKey.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
+            // Create a wallet file. 
+            string encryptedSeed = masterKey.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
             Wallet wallet = this.GenerateWalletFile(name, encryptedSeed, masterKey.ChainCode, handshakeTime);
 
-            // Generate multiple accounts and addresses from the get-go.
+            // Generate multiple accounts and addresses from the get-go. Similar to LoadWallet from here on.
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
-				HdAccount account = wallet.AddNewAccount(passphrase, this.coinType, this.dateTimeProvider.GetTimeOffset());
+                HdAccount account = wallet.AddNewAccount(passphrase, this.coinType, this.dateTimeProvider.GetTimeOffset());
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
@@ -380,12 +382,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet may not be known.
             if (this.chain.IsDownloaded())
             {
-				int blockSyncStart = this.chain.GetHeightAtTime(handshakeTime);
+                int blockSyncStart = this.chain.GetHeightAtTime(handshakeTime);
                 this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
             }
             else
             {
-				this.UpdateWhenChainDownloaded(new[] { wallet }, handshakeTime);
+                this.UpdateWhenChainDownloaded(new[] { wallet }, handshakeTime);
             }
 
             // Save the changes to the file and add addresses to be tracked.

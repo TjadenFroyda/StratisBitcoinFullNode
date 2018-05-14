@@ -3,8 +3,6 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 
 // TODO: Add/improve Comments
-// TODO: Check coding style guide
-// TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
 {
     /// <summary>

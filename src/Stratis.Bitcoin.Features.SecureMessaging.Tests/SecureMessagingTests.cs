@@ -7,7 +7,6 @@ using Xunit;
 
 // TODO: Add Logging
 // TODO: Add/improve Comments
-// TODO: Check coding style guide
 // TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
 {
@@ -16,9 +15,9 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
     /// </summary>
     public class SecureMessagingTests : LogsTestBase
     {
-		private Network network;
-		private TestPerson Alice;
-		private TestPerson Bob;
+        private Network network;
+        private TestPerson Alice;
+        private TestPerson Bob;
         
         /// <summary>
         /// Initializes a new instance of the
@@ -26,13 +25,13 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         /// </summary>
         public SecureMessagingTests()
         {
-			this.network = this.Network;
+            this.network = this.Network;
 
-			// KeyPairs for Bob and Alice generated from https://kjur.github.io/jsrsasign/sample/sample-ecdsa.html using SECP256K1
+            // KeyPairs for Bob and Alice generated from https://kjur.github.io/jsrsasign/sample/sample-ecdsa.html using SECP256K1
             this.Alice = new TestPerson(
-				pub: "04bc888f2739cc9c9a5d595bf4da54a1fb6854c269f8e8ab0d3e94f71ba37d75a84b196ce0801eb13b94a181c4c34ed15f2ec1c5fd1899d8953a546b8c164d18c6",
-				priv: "6215a59058ba689889a3aa0e32d0f686ddb7a3ffae003376f4d0744eb7b61b19"
-			);
+                pub: "04bc888f2739cc9c9a5d595bf4da54a1fb6854c269f8e8ab0d3e94f71ba37d75a84b196ce0801eb13b94a181c4c34ed15f2ec1c5fd1899d8953a546b8c164d18c6",
+                priv: "6215a59058ba689889a3aa0e32d0f686ddb7a3ffae003376f4d0744eb7b61b19"
+            );
             this.Bob = new TestPerson(
                 pub: "049788818055d962297edbeb50431b8c44f545714bf0ce5471159cecd86c78efe2742778ad242ac325fb48217351f70782db8bf50f633b59f2bdbdcd1a08f1f7aa",
                 priv: "d57cc0624f024149c300c0897ac917c58142be3d6346797651c85ca8dbae05f8"
@@ -44,9 +43,9 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         {
             string privKeyHexString = "6215a59058ba689889a3aa0e32d0f686ddb7a3ffae003376f4d0744eb7b61b19";
             string pubKeyHexString = "04bc888f2739cc9c9a5d595bf4da54a1fb6854c269f8e8ab0d3e94f71ba37d75a84b196ce0801eb13b94a181c4c34ed15f2ec1c5fd1899d8953a546b8c164d18c6";
-			TestPerson me = new TestPerson(pubKeyHexString, privKeyHexString);
-			Assert.Equal(me.GetPublicKeyHex(), pubKeyHexString);
-            Assert.Equal(me.GetPrivateKeyHex() , privKeyHexString);            
+            TestPerson me = new TestPerson(pubKeyHexString, privKeyHexString);
+            Assert.Equal(me.GetPublicKeyHex(), pubKeyHexString);
+            Assert.Equal(me.GetPrivateKeyHex() , privKeyHexString);
         }
 
         /// <summary>
@@ -56,17 +55,16 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         [Fact]
         public void TestSharedSecretAlgoCheck1()
         {
-			// Set up
-			PubKey pubKey = new PubKey("04a5cf05bfe42daffaff4f1732f5868ed7c7919cba279fa7d940e6b02a8b059bde56be218077bcab1ad6b5f5dcb04c42534477fb8d21b6312b0063e08a8ae52b3e");
-			Key privKey = new Key(Encoders.Hex.DecodeData("7bd0db101160c888e9643f10594185a36a8db91b5308aaa7aad4c03245c6bdc1"));
+            // Set up
+            PubKey pubKey = new PubKey("04a5cf05bfe42daffaff4f1732f5868ed7c7919cba279fa7d940e6b02a8b059bde56be218077bcab1ad6b5f5dcb04c42534477fb8d21b6312b0063e08a8ae52b3e");
+            Key privKey = new Key(Encoders.Hex.DecodeData("7bd0db101160c888e9643f10594185a36a8db91b5308aaa7aad4c03245c6bdc1"));
             string expectedKey = "a461392f592ff4292bfce732d808a07f1bc3f49c9a66a40d50761ffb8b2325f6";
-            
+ 
             // Act
             SecureMessaging AlgoCheck1 = new SecureMessaging(privKey, pubKey, this.network);
 
-
             // Assert
-			Assert.Equal(expectedKey, AlgoCheck1.GetSharedSecretMasterPrivateKey().ToHex(this.network));            
+            Assert.Equal(expectedKey, AlgoCheck1.GetSharedSecretMasterPrivateKey().ToHex(this.network));            
         }
 
         /// <summary>
@@ -76,13 +74,13 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         [Fact]
         public void TestSharedSecretAlgoCheck2()
         {
-			// Set up
-			PubKey pubKey = new PubKey("043f12235bcf2776c8489ed138d4c9b85a1e29f3f4ad2787b9c8588e960867afc9de1e5702caa787665f5d0a4b04015c8bd5f1541e3d170efc3668f6ac587d43bc");
-			Key privKey = new Key(Encoders.Hex.DecodeData("1249b289c5959c71ae60e0a2a7d57dffbd5cb862aaf10442db205f6787791732"));
+            // Set up
+            PubKey pubKey = new PubKey("043f12235bcf2776c8489ed138d4c9b85a1e29f3f4ad2787b9c8588e960867afc9de1e5702caa787665f5d0a4b04015c8bd5f1541e3d170efc3668f6ac587d43bc");
+            Key privKey = new Key(Encoders.Hex.DecodeData("1249b289c5959c71ae60e0a2a7d57dffbd5cb862aaf10442db205f6787791732"));
             string expectedKey = "1d664ba11d3925cfcd938b2ef131213ba4ca986822944d0a7616b34027738e7c";
 
             // Act
-			SecureMessaging AlgoCheck2 = new SecureMessaging(privKey, pubKey, this.Network);
+            SecureMessaging AlgoCheck2 = new SecureMessaging(privKey, pubKey, this.Network);
 
             // Assert
             Assert.Equal(AlgoCheck2.GetSharedSecretMasterPrivateKey().ToHex(this.Network), expectedKey);
@@ -95,13 +93,13 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         [Fact]
         public void TestSharedSecretAlgoCheck3()
         {
-			// Set up
-			PubKey pubKey = new PubKey("04769c29328998917d9f2f7c6ce46f2f12a6064e937dff722b4811e9c88b4e1d45387fea132321541e8dbdc92384aef1944d650aa889bfa836db078897e5299262");
-			Key privKey = new Key(Encoders.Hex.DecodeData("41d0cbeeb3365b8c9e190f9898689997002f94006ad3bf1dcfbac28b6e4fb84d"));
+            // Set up
+            PubKey pubKey = new PubKey("04769c29328998917d9f2f7c6ce46f2f12a6064e937dff722b4811e9c88b4e1d45387fea132321541e8dbdc92384aef1944d650aa889bfa836db078897e5299262");
+            Key privKey = new Key(Encoders.Hex.DecodeData("41d0cbeeb3365b8c9e190f9898689997002f94006ad3bf1dcfbac28b6e4fb84d"));
             string expectedKey = "7fcfa754a40ceaabee5cd3df1a99ee2e5d2c027fdcbd8e437d9be757ea58708f";
 
             // Act
-			SecureMessaging AlgoCheck3 = new SecureMessaging(privKey, pubKey, this.network);
+            SecureMessaging AlgoCheck3 = new SecureMessaging(privKey, pubKey, this.network);
 
             // Assert
             Assert.Equal(AlgoCheck3.GetSharedSecretMasterPrivateKey().ToHex(this.Network), expectedKey);
@@ -114,8 +112,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         public void TestMatchingSharedSecrets()
         {   
             //Set up
-			SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
-			SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
+            SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
 
             // Act and Assert
             Assert.Equal(
@@ -123,7 +121,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
                 AliceSM.GetSharedSecretMasterPrivateKey().ToHex(this.Network)
             );
         }
-        
+ 
         /// <summary>
         /// Tests the bob message to alice.
         /// </summary>
@@ -132,9 +130,9 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         {
             // Set up
             string BobPlainTextMessage = "Have a great day Alice!";
-			SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
-			SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
-            
+            SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
+ 
             // Act
             string BobCipher = BobSM.EncryptMessage(BobPlainTextMessage);
             string AliceDecryptedPlainTextMessage = AliceSM.DecryptMessage(BobCipher);
@@ -151,8 +149,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         {
             // Set Up
             string AlicePlainTextMessage = "Bugger off, Bob";
-			SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
-			SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
+            SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
 
             // Act
             string AliceCipher = AliceSM.EncryptMessage(AlicePlainTextMessage);
@@ -174,8 +172,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
 Phasellus ac dignissim velit, quis luctus lectus. Cras convallis vitae tortor rutrum commodo. Nunc vitae lobortis elit, eget gravida neque. Sed at auctor lorem. Vivamus cursus nibh lacus, quis cursus arcu volutpat vel. Aenean id gravida odio. Vestibulum a mollis elit.
 
 Quisque tellus dolor, tempor eu tortor sit amet, finibus tincidunt augue.Etiam odio justo, laoreet non nunc ut, posuere sodales urna. Nunc mattis et lectus at gravida. Proin vel risus vitae tortor faucibus posuere in et enim. Maecenas sit amet purus tincidunt justo fringilla tempus sit amet lobortis nunc. In ultricies, odio sed tempus rhoncus, urna mauris hendrerit dui, condimentum pretium enim eros id diam.Maecenas eu fermentum lorem. Cras id facilisis purus, non ultrices turpis. Pellentesque nisi tortor, viverra eu rhoncus sit amet, accumsan et ipsum.Praesent varius nibh ut vulputate dictum. Vestibulum quis suscipit purus, at sollicitudin augue. Maecenas ac maximus turpis, sed dignissim lacus. Nullam fermentum lobortis vulputate. Suspendisse ac magna pharetra arcu cursus tempus sed eu turpis. Aenean elementum a libero at commodo.";
-			SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
-			SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
+            SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
 
             // Act
             string AliceCipher = AliceSM.EncryptMessage(AlicePlainTextMessage);
@@ -197,14 +195,14 @@ Quisque tellus dolor, tempor eu tortor sit amet, finibus tincidunt augue.Etiam o
                 pub: "040c9ec013d34f362445ec1f3b87feaf857cee2ae45d8506c62a53ecb23147219993ee8dec6e1eaf25edf3757871df344636b1defe2b31b06ea5858e2c529db4d2",
                 priv: "3e4af283ebb2716f0212b7079466f3b75cc3d4189877ab7953e48c826eebdd4d"
             );
-			SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
-			SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
+            SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
 
             // Act
             string AliceCipher = AliceSM.EncryptMessage(AlicePlainTextMessage);
 
             // Assert
-			SecureMessaging ChadSM = new SecureMessaging(Chad.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessaging ChadSM = new SecureMessaging(Chad.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
             try
             {
                 string ChadDecryptedPlainTextMessage = ChadSM.DecryptMessage(AliceCipher);
@@ -213,7 +211,6 @@ Quisque tellus dolor, tempor eu tortor sit amet, finibus tincidunt augue.Etiam o
             {
                 Assert.True(e is System.Security.Cryptography.CryptographicException);
             }
-            
         }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
 using Stratis.Bitcoin.Features.SecureMessaging.Models;
@@ -24,12 +25,11 @@ using System.Text;
 
 // TODO: Add Logging
 // TODO: Add/improve comments
-// TODO: Check coding style guide
 // TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
 {
     /// <summary>
-    /// Controller providing SecureMessaging operation
+    /// Controller providing SecureMessaging operations
     /// </summary>
     [Route("api/[controller]")]
     public partial class SecureMessagingController : Controller
@@ -49,13 +49,14 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
-        /// <summary>The secure messaging.</summary>
+        /// <summary>The secure messaging handler.</summary>
         private ISecureMessaging secureMessaging;
 
-        /// <summary>Action.</summary>
+        /// <summary>Action to be performed by the node - encryption or decryption.</summary>
         internal enum Action { Encrypt, Decrypt };
 
-		private Uri apiURI;
+        /// <summary></summary>
+        private Uri apiURI;
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -74,13 +75,12 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
             Guard.NotNull(walletTransactionHandler, nameof(walletTransactionHandler));
-
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.walletManager = walletManager;
             this.network = network;
             this.walletTransactionHandler = walletTransactionHandler;
-			this.apiURI = this.fullNode.NodeService<ApiSettings>().ApiUri;
+            this.apiURI = this.fullNode.NodeService<ApiSettings>().ApiUri;
         }
                 
         /// <summary>
@@ -97,7 +97,9 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             if (action == Action.Encrypt)
             {
                 return this.secureMessaging.EncryptMessage(request.Message);
-            } else {
+            }
+            else
+            {
                 return this.secureMessaging.DecryptMessage(request.Message);
             }
         }
@@ -122,7 +124,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             {
                 string encryptedSeed = this.walletManager.GetWalletByName(request.WalletName).EncryptedSeed;
                 Key decryptedSeed = HdOperations.DecryptSeed(encryptedSeed, request.Passphrase, this.network);
-				return new Key(decryptedSeed.ToBytes());
+                return new Key(decryptedSeed.ToBytes());
             }
             else
             {
@@ -135,10 +137,10 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// </summary>
         /// <returns>The private messaging pub key.</returns>
         /// <param name="request">Request.</param>
-		internal PubKey GetPrivateMessagingPubKey(SecureMessageRequest request){
-			Key privateKey = GetPrivateMessagingKey(request);
-			return privateKey.PubKey;
-		}
+        internal PubKey GetPrivateMessagingPubKey(SecureMessageRequest request){
+            Key privateKey = GetPrivateMessagingKey(request);
+            return privateKey.PubKey;
+        }
         
         /// <summary>
         /// Gets the destination script pub key.
@@ -162,46 +164,51 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// Builds the transaction batch.
         /// </summary>
         /// <returns>The transaction batch.</returns>
-		internal List<BuildTransactionRequest> PrepareTransactionBatch(SecureMessageRequest request)
+        internal List<BuildTransactionRequest> PrepareTransactionBatch(SecureMessageRequest request)
         {
             string encryptedMessage = this.MessageAction(request, Action.Encrypt);
 
             List<string> chunkedEncryptedMessages = this.secureMessaging.prepareOPReturnMessageList(encryptedMessage);
 
-			List<BuildTransactionRequest> prepareTransactionRequests = new List<BuildTransactionRequest>();
+            List<BuildTransactionRequest> prepareTransactionRequests = new List<BuildTransactionRequest>();
 
-			foreach (string message in chunkedEncryptedMessages){
-				BuildTransactionRequest transactionRequest = new BuildTransactionRequest
-				{
-					WalletName = request.WalletName,
-					AccountName = request.AccountName,
-					DestinationAddress = request.DestinationAddress,
-					Amount = "0.0",
-					FeeAmount = "Low",
-					Password = request.Passphrase,
-					OpReturnData = message,
+            foreach (string message in chunkedEncryptedMessages){
+                BuildTransactionRequest transactionRequest = new BuildTransactionRequest
+                {
+                    WalletName = request.WalletName,
+                    AccountName = request.AccountName,
+                    DestinationAddress = request.DestinationAddress,
+                    Amount = new Money(0).ToString(),
+                    FeeAmount = "Low",
+                    Password = request.Passphrase,
+                    OpReturnData = message,
                     AllowUnconfirmed = true,
                     ShuffleOutputs = true
-				};
-				prepareTransactionRequests.Add(transactionRequest);
-			}
-			return prepareTransactionRequests;
+                };
+                prepareTransactionRequests.Add(transactionRequest);
+            }
+            return prepareTransactionRequests;
         }
 
-		internal List<WalletBuildTransactionModel> BuildTransactionBatch(List<BuildTransactionRequest> buildTransactionRequests){
-
-
-			List<WalletBuildTransactionModel> walletBuildTransactionModels = new List<WalletBuildTransactionModel>();
-			using (var httpClient = new HttpClient())
-			{
-				foreach (BuildTransactionRequest buildTransactionRequest in buildTransactionRequests)
-				{
-					var httpRequestContent = new StringContent(buildTransactionRequest.ToString(), Encoding.UTF8, "application/json");
-					var response
-				}
+        internal List<WalletBuildTransactionModel> BuildTransactionBatch(List<BuildTransactionRequest> buildTransactionRequests)
+        {
+            List<WalletBuildTransactionModel> walletBuildTransactionModels = new List<WalletBuildTransactionModel>();
+            using (HttpClient httpClient = new HttpClient())
+            {
+                foreach (BuildTransactionRequest buildTransactionRequest in buildTransactionRequests)
+                {
+                    HttpRequestContent httpRequestContent = new StringContent(buildTransactionRequest.ToString(), Encoding.UTF8, "application/json");
+                    HttpResponse response = this.httpClient.PostAsync($"{this.apiUri}api/wallet/build-transaction", httpRequestContent).GetAwaiter().GetResult();
+                    Jobject responseJObj = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
+                    WalletBuildTransactionModel model = new WalletBuildTransactionModel{
+                        Fee = responseJObj.GetValue("Fee"),
+                        Hex = responseJObj.GetValue("Hex"),
+                        TransactionId = responseJObj.GetValue("TransactionId")
+                    };
+                }
                 
-			}
-		}        
+            }
+        }
        
         /// <summary>
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
@@ -214,7 +221,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
                 HttpStatusCode.BadRequest,
                 string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)),
                 string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message))
-			);
-        }        
+            );
+        }
     }
 }
