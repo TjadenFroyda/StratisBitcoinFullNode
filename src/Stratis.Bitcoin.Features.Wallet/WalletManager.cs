@@ -286,17 +286,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(name, nameof(name));
             Guard.NotEmpty(mnemonic, nameof(mnemonic));
-            this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
-
-            // For now the passphrase is set to be the password by default.
-            if (passphrase == null)
-                passphrase = password;
+            Guard.NotNull(creationTime, nameof(creationTime));
 
             // Generate the root seed used to generate keys.
             ExtKey extendedKey;
             try
             {
-                extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
+                RecoverWallet(HdOperations.GetHdPrivateKey(mnemonic, passphrase), name, creationTime, passphrase);
             }
             catch (NotSupportedException ex)
             {
@@ -308,15 +304,34 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 throw;
             }
+        }
+ 
+        /// <summary>
+        /// Overloaded RecoverWallet 
+        /// </summary>
+        /// <returns>A wallet generated from a private key seed</returns>
+        /// <param name="seed">Seed used to generate wallet.</param>
+        /// <param name="name">Name of the wallet</param>
+        /// <param name="creationTime">Time the wallet was generated</param>
+        public Wallet RecoverWallet(ExtKey seed, string name, DateTime creationTime, string passphrase = null)
+        {
+            Guard.NotNull(seed, nameof(seed));
+            Guard.NotEmpty(name, nameof(name));
+            Guard.NotNull(creationTime, nameof(creationTime));
+            this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
 
-            // Create a wallet file.
-            string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
-            Wallet wallet = this.GenerateWalletFile(name, encryptedSeed, extendedKey.ChainCode, creationTime);
+            // If no passphrase is given, will default to the wallet's name.
+            if (passphrase == null)
+                passphrase = name;
 
-            // Generate multiple accounts and addresses from the get-go.
+            // Create a wallet file. 
+            string encryptedSeed = seed.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
+            Wallet wallet = this.GenerateWalletFile(name, encryptedSeed, seed.ChainCode, creationTime);
+
+            // Generate multiple accounts and addresses from the get-go. Similar to LoadWallet from here on.
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
-                HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
+                HdAccount account = wallet.AddNewAccount(passphrase, this.coinType, this.dateTimeProvider.GetTimeOffset());
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
@@ -333,61 +348,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             else
             {
                 this.UpdateWhenChainDownloaded(new[] { wallet }, creationTime);
-            }
-
-            // Save the changes to the file and add addresses to be tracked.
-            this.SaveWallet(wallet);
-            this.Load(wallet);
-
-            this.logger.LogTrace("(-)");
-            return wallet;
-        }
- 
-        /// <summary>
-        /// Loads a wallet from private key seed and encrypts it with the given passphrase.
-        /// An alternative method for loading a wallet, implemented in the SecureMessaging Feature, where the
-        /// share secret private key is used to generate a shared wallet. 
-        /// </summary>
-        /// <returns>A wallet generated from a private key seed</returns>
-        /// <param name="seed">Seed used to generate wallet.</param>
-        /// <param name="name">Name of the wallet</param>
-        /// <param name="handshakeTime">Handshake time is synonymous with creation time</param>
-        public Wallet LoadWalletFromPrivateKeySeed(Key seed, string name, DateTime handshakeTime, string passphrase = null)
-        {
-            Guard.NotNull(seed, nameof(seed));
-            Guard.NotEmpty(name, nameof(name));
-            this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
-
-            ExtKey masterKey = new ExtKey(seed.ToHex(this.network));
-
-            // If no passphrase is given, will default to the wallet's name.
-            if (passphrase == null)
-                passphrase = name;
-
-            // Create a wallet file. 
-            string encryptedSeed = masterKey.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
-            Wallet wallet = this.GenerateWalletFile(name, encryptedSeed, masterKey.ChainCode, handshakeTime);
-
-            // Generate multiple accounts and addresses from the get-go. Similar to LoadWallet from here on.
-            for (int i = 0; i < WalletRecoveryAccountsCount; i++)
-            {
-                HdAccount account = wallet.AddNewAccount(passphrase, this.coinType, this.dateTimeProvider.GetTimeOffset());
-                IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer);
-                IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
-                this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
-            }
-
-            // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
-            // However, if the chain is still downloading when the user restores a wallet,
-            // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet may not be known.
-            if (this.chain.IsDownloaded())
-            {
-                int blockSyncStart = this.chain.GetHeightAtTime(handshakeTime);
-                this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
-            }
-            else
-            {
-                this.UpdateWhenChainDownloaded(new[] { wallet }, handshakeTime);
             }
 
             // Save the changes to the file and add addresses to be tracked.
