@@ -2,14 +2,12 @@
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 
 // TODO: Add Logging
 // TODO: Add/improve comments
-// TODO: Check coding style guide
 // TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging
 {
@@ -24,7 +22,6 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         private readonly Key sharedSecretMasterPrivateKey;
         private readonly Network network;
         private readonly ISymmetricEncryption symmetricEncryption;
-        private string blockexplorerurl = "https://chainz.cryptoid.info/explorer/tx.raw.dws?coin=strat&id=";
         
         public SecureMessaging(Key privkey, PubKey pubkey, Network net)
         {

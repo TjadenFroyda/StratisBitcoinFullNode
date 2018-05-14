@@ -2,11 +2,11 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
 using Stratis.Bitcoin.Features.SecureMessaging.Models;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
@@ -15,11 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
-using System.Text;
-
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.SecureMessaging.Tests")]
 
@@ -80,7 +76,22 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             this.walletManager = walletManager;
             this.network = network;
             this.walletTransactionHandler = walletTransactionHandler;
-            this.apiURI = this.fullNode.NodeService<ApiSettings>().ApiUri;
+            if (this.network == Network.StratisMain)
+            {
+                this.apiURI = new Uri("http://localhost:37221");
+            }
+            else if (this.network == Network.TestNet)
+            {
+                this.apiURI = new Uri("http://localhost:38220");
+            }
+            else if (this.network == Network.StratisTest)
+            {
+                this.apiURI = new Uri("http://localhost:38221");
+            }
+            else 
+            {
+                this.apiURI = new Uri("http://localhost:37220");
+            }
         }
                 
         /// <summary>
@@ -91,7 +102,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// <param name="action">Action.</param>
         internal string MessageAction(SecureMessageRequest request, Action action)
         {
-            Key privateKey = GetPrivateKey(request);
+            Key privateKey = GetPrivateMessagingKey(request);
             PubKey receiverPubKey = request.ReceiverPublicKey == null ? new PubKey(request.ReceiverPublicKey) : throw new SecureMessageException("Please enter the receiver's public key");
             this.secureMessaging = new SecureMessaging(privateKey, receiverPubKey, this.network);
             if (action == Action.Encrypt)
@@ -104,6 +115,13 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             }
         }
         
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="sharedSecret"></param>
+        /// <param name="name"></param>
+        /// <param name="handshakeTime"></param>
+        /// <returns></returns>
         internal Wallet.Wallet LoadWalletFromPrivateSeed(Key sharedSecret, string name, DateTime handshakeTime)
         {
             return this.fullNode.NodeService<WalletManager>().LoadWalletFromPrivateKeySeed(sharedSecret, name, handshakeTime);
@@ -141,27 +159,25 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             Key privateKey = GetPrivateMessagingKey(request);
             return privateKey.PubKey;
         }
-        
+
         /// <summary>
-        /// Gets the destination script pub key.
+        /// A method to determine total transaction cost for the message in satoshis. 
         /// </summary>
-        /// <returns>The destination script pub key.</returns>
-        /// <param name="request">Request.</param>
-        internal Script GetDestScriptPubKey(GetDestScriptPubKeyRequest request)
+        /// <param name="buildTransactionResults"></param>
+        /// <returns></returns>
+        internal Money GetSecureMessageTransactionCost(List<IActionResult> buildTransactionResults)
         {
-            if (request.DestinationAddress == null)
+            Money cost = new Money(0);
+            foreach(IActionResult buildTransactionResult in buildTransactionResults)
             {
-                return this.secureMessaging.GetDestScriptPubKey();
+                WalletBuildTransactionModel walletTransactionModel = (WalletBuildTransactionModel)(buildTransactionResult as JsonResult)?.Value;
+                cost += walletTransactionModel.Fee;
             }
-            else
-            {
-                BitcoinAddress destAddress = BitcoinAddress.Create(request.DestinationAddress);
-                return destAddress.ScriptPubKey;
-            }
+            return cost;
         }
 
         /// <summary>
-        /// Builds the transaction batch.
+        /// Builds the transaction batch but does not sent. Mainly useful to preview the transaction before sending.
         /// </summary>
         /// <returns>The transaction batch.</returns>
         internal List<BuildTransactionRequest> PrepareTransactionBatch(SecureMessageRequest request)
@@ -190,26 +206,42 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             return prepareTransactionRequests;
         }
 
-        internal List<WalletBuildTransactionModel> BuildTransactionBatch(List<BuildTransactionRequest> buildTransactionRequests)
+        /// <summary>
+        /// Builds a batch of transaction requests using the API internals.  
+        /// </summary>
+        /// <param name="buildTransactionRequests">A list of valid transaction requests</param>
+        /// <returns>A List of json responses from the api stating success/failure of each message.</returns>
+        internal List<IActionResult> BuildTransactionBatch(List<BuildTransactionRequest> buildTransactionRequests)
         {
-            List<WalletBuildTransactionModel> walletBuildTransactionModels = new List<WalletBuildTransactionModel>();
-            using (HttpClient httpClient = new HttpClient())
+            List<IActionResult> walletBuildTransactionResults = new List<IActionResult>();
+            foreach (BuildTransactionRequest buildTransactionRequest in buildTransactionRequests)
             {
-                foreach (BuildTransactionRequest buildTransactionRequest in buildTransactionRequests)
-                {
-                    HttpRequestContent httpRequestContent = new StringContent(buildTransactionRequest.ToString(), Encoding.UTF8, "application/json");
-                    HttpResponse response = this.httpClient.PostAsync($"{this.apiUri}api/wallet/build-transaction", httpRequestContent).GetAwaiter().GetResult();
-                    Jobject responseJObj = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
-                    WalletBuildTransactionModel model = new WalletBuildTransactionModel{
-                        Fee = responseJObj.GetValue("Fee"),
-                        Hex = responseJObj.GetValue("Hex"),
-                        TransactionId = responseJObj.GetValue("TransactionId")
-                    };
-                }
-                
+                IActionResult transactionBuildResult = this.fullNode.NodeService<WalletController>().BuildTransaction(buildTransactionRequest);
+                walletBuildTransactionResults.Add(transactionBuildResult);    
             }
+            return walletBuildTransactionResults;
         }
        
+        /// <summary>
+        /// Builds and sends a secure message with the provided parameters using the API internals. 
+        /// </summary>
+        /// <param name="request">A HttpPost reuqest with the SecureMessageRequest parameters</param>
+        /// <returns></returns>
+        internal IActionResult BuildAndSendTransactionBatch(SecureMessageRequest request)
+        {
+            List<BuildTransactionRequest> preparedTransactionRequests = PrepareTransactionBatch(request);
+            List<IActionResult> buildTransactionRequestResults = BuildTransactionBatch(preparedTransactionRequests);
+            Money cost = GetSecureMessageTransactionCost(buildTransactionRequestResults);
+            List<WalletSendTransactionModel> sendRequestResults = new List<WalletSendTransactionModel>();
+            foreach (IActionResult buildTransactionRequestResult in buildTransactionRequestResults)
+            {
+                WalletBuildTransactionModel walletTransactionModel = (WalletBuildTransactionModel)(buildTransactionRequestResult as JsonResult)?.Value;
+                IActionResult sendRequestResult = this.fullNode.NodeFeature<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
+                sendRequestResults.Add((WalletSendTransactionModel)(sendRequestResult as JsonResult)?.Value);
+            }
+            return this.Json(new SecureMessageSendResult { Cost = cost, SendTransactionResults = sendRequestResults });
+        }
+
         /// <summary>
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>

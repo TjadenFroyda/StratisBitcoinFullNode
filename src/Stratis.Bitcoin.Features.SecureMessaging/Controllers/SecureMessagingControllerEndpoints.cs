@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.SecureMessaging.Models;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Runtime.CompilerServices;
 
@@ -11,7 +13,6 @@ using System.Runtime.CompilerServices;
 
 // TODO: Add Logging
 // TODO: Add/improve comments
-// TODO: Check coding style guide
 // TODO: Safety checks
 namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
 {
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
     /// </summary>
     [Route("api/[controller]")]
     public partial class SecureMessagingController : Controller
-    {      
+    {
         /// <summary>
         /// Encrypts the message.
         /// </summary>
@@ -66,7 +67,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             }
             try
             {
-                return Json(MessageAction(request,Action.Decrypt));
+                return Json(MessageAction(request, Action.Decrypt));
             }
             catch (Exception e)
             {
@@ -74,14 +75,14 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-        
+
         /// <summary>
         /// Sends the secure message.
         /// </summary>
         /// <returns>The secure message.</returns>
         /// <param name="request">Request.</param>
         [Route("send")]
-        [HttpPost]        
+        [HttpPost]
         public IActionResult SendSecureMessage([FromBody] SecureMessageRequest request)
         {
             Guard.NotNull(request, nameof(request));
@@ -93,8 +94,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             }
             try
             {
-                TransactionBatchBuilder batchBuilder = BuildTransactionBatch(request);
-                return Json(batchBuilder.SendBatch((FullNode)this.fullNode));                
+                return BuildAndSendTransactionBatch(request);
             }
             catch (Exception e)
             {
@@ -110,8 +110,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// <returns>The total transaction cost.</returns>
         /// <param name="request">HTTP post request with required parameters. See model for details.</param>
         [Route("get-transaction-cost")]
-        [HttpPost]        
-        public IActionResult GetTransactionCost([FromBody] SecureMessageRequest request)
+        [HttpPost]
+        public IActionResult GetSecureMessageTransactionCost([FromBody] SecureMessageRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -122,8 +122,75 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             }
             try
             {
-                TransactionBatchBuilder batchBuilder = BuildTransactionBatch(request);
-                return Json(batchBuilder.GetTotalCostInSatoshis());
+                List<BuildTransactionRequest> preparedTransactionBatch = PrepareTransactionBatch(request);
+                return this.Json(GetSecureMessageTransactionCost(BuildTransactionBatch(preparedTransactionBatch)));
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        [Route("build-secure-message")]
+        [HttpPost]
+        public IActionResult BuildSecureMessageTransactions([FromBody] SecureMessageRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+            try
+            {
+                List<BuildTransactionRequest> preparedTransactionBatch = PrepareTransactionBatch(request);
+                return this.Json(BuildTransactionBatch(preparedTransactionBatch));
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        [Route("get-securemessaging-privatekey")]
+        [HttpPost]
+        public IActionResult GetSecureMessagingPrivateKey([FromBody] SecureMessageRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+            try
+            {
+                return this.Json(GetPrivateMessagingKey(request));
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        [Route("get-securemessaging-publickey")]
+        [HttpPost]
+        public IActionResult GetSecureMessagingPublicKey([FromBody] SecureMessageRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+            try
+            {
+                return this.Json(GetPrivateMessagingPubKey(request));
             }
             catch (Exception e)
             {

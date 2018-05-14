@@ -12,15 +12,17 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
     {
         private Key privKey;
         private PubKey pubKey;
+        private Network network;
 
-        public TestPerson(string pub, string priv)
+        public TestPerson(string pub, string priv, Network net)
         {
             this.privKey = new Key(Encoders.Hex.DecodeData(priv));
             this.pubKey = new PubKey(pub);
+            this.network = net;
         }
         public string GetPrivateKeyHex()
         {
-            return this.privKey.ToHex(Network.Main);
+            return this.privKey.ToHex(this.network);
         }
         public Key GetPrivateKey()
         {
@@ -28,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         }
         public string GetPublicKeyHex()
         {
-            return this.pubKey.ToHex(Network.Main);
+            return this.pubKey.ToHex(this.network);
         }
         public PubKey GetPublicKey()
         {

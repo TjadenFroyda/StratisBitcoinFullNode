@@ -3,7 +3,6 @@ using Stratis.Bitcoin.Features.Wallet;
 using System.Collections.Generic;
 
 // TODO: Add/improve comments
-// TODO: Check coding style guide
 namespace Stratis.Bitcoin.Features.SecureMessaging.Interfaces
 {
     public interface ISecureMessaging
@@ -13,12 +12,5 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Interfaces
         string EncryptMessage(string plaintextMessage);
         string DecryptMessage(string hexcipher);    
         List<string> prepareOPReturnMessageList(string hexEncodedEncryptedMessage);
-        List<TransactionBuildContext> TransactionBuilder(
-            string sendingWalletName,
-            string sendingAccountName,
-            Script destination,
-            string sendingPassword,
-            List<string> messageList
-        );
     }
 }

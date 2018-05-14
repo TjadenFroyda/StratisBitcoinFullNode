@@ -1,6 +1,7 @@
 ﻿using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Tests.Common.Logging;
@@ -29,15 +30,18 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         {
             // TODO: Set up two wallets for Alice and Bob. Will generate a secret key for each 
             // (maybe same ones as SecureMessageTests) for reproducibility. 
+            this.network = Network.Main;
             this.Alice = new TestPerson(
                 pub: "04bc888f2739cc9c9a5d595bf4da54a1fb6854c269f8e8ab0d3e94f71ba37d75a84b196ce0801eb13b94a181c4c34ed15f2ec1c5fd1899d8953a546b8c164d18c6",
-                priv: "6215a59058ba689889a3aa0e32d0f686ddb7a3ffae003376f4d0744eb7b61b19"
+                priv: "6215a59058ba689889a3aa0e32d0f686ddb7a3ffae003376f4d0744eb7b61b19",
+                net: this.network
             );
             this.Bob = new TestPerson(
                 pub: "049788818055d962297edbeb50431b8c44f545714bf0ce5471159cecd86c78efe2742778ad242ac325fb48217351f70782db8bf50f633b59f2bdbdcd1a08f1f7aa",
-                priv: "d57cc0624f024149c300c0897ac917c58142be3d6346797651c85ca8dbae05f8"
+                priv: "d57cc0624f024149c300c0897ac917c58142be3d6346797651c85ca8dbae05f8",
+                net: this.network
             );
-            this.network = Network.StratisMain;
+
         }
  
         /// <summary>
@@ -73,13 +77,13 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
  
             // Act
             Wallet.Wallet AliceWallet = walletManager.LoadWalletFromPrivateKeySeed(
-                Alice.GetPrivateKey(),
+                this.Alice.GetPrivateKey(),
                 "AliceWallet",
                 DateTime.Now,
                 passphrase
             );
  
-            ExtKey expectedExtKey = new ExtKey(Alice.GetPrivateKeyHex());
+            ExtKey expectedExtKey = new ExtKey(this.Alice.GetPrivateKeyHex());
             string expectedEncryptedSeed = expectedExtKey.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
  
             // Assert
@@ -92,11 +96,11 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         // DumpPrivKey is a RPC call. Seeking to avoid RPC based calls as not all nodes 
         // will be running RPC and API is more modern approach.
         [Fact]
-        public void TestWalletDumpPrivKeyWithoutRPC()
+        public void TestWalletGenerateSecureMessagingPrivateKey()
         {
             // Set up
             DataFolder dataFolder = CreateDataFolder(this);
-            var chain = new ConcurrentChain(network);
+            var chain = new ConcurrentChain(this.network);
             var nonce = RandomUtils.GetUInt32();
             var block = new Block();
             block.AddTransaction(new Transaction());
@@ -117,7 +121,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             );
             string passphrase = "This is an awesome passphrase";
             Wallet.Wallet AliceWallet = walletManager.LoadWalletFromPrivateKeySeed(
-                Alice.GetPrivateKey(),
+                this.Alice.GetPrivateKey(),
                 "AliceWallet",
                 DateTime.Now,
                 passphrase
@@ -129,14 +133,19 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
                 this.network,
                 new Mock<IWalletTransactionHandler>().Object
             );
-            GetPrivateKeyRequest myRequest = new GetPrivateKeyRequest
+            SecureMessageKeyRequest myKeyRequest = new SecureMessageKeyRequest
             {
                 WalletName = "AliceWallet",
                 Passphrase = passphrase
             };
             // Act
-            Key dumpkey = secureMessagingController.GetPrivateKey(myRequest);
-            Key expectedKey = Alice.GetPrivateKey();
+            Key dumpkey = secureMessagingController.GetPrivateMessagingKey(myKeyRequest);
+
+            // Secure message private key derivation algorithm. 
+            ExtKey masterKey = new ExtKey(this.Alice.GetPrivateKeyHex());
+            string expencseed = masterKey.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
+            Key expdecseed = Key.Parse(expencseed, passphrase, this.network);
+            Key expectedKey = new Key(expdecseed.ToBytes());
 
             // Assert
             Assert.Equal(expectedKey, dumpkey);
@@ -146,8 +155,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         public void TestSharedSecretGeneration()
         {
             // TODO: Test shared address generation using the Bob and Alice's wallet keys.
-            // The last unit test demonstrated that we could dump the private keys using the API only (no RPC). 
-            // This test will see if the shared secret can be successfully generated.
+            // The last unit test generated a set of private keys derived from the wallet seed. 
+            // This test will see if the shared secret can be successfully generated from these keys.
             // Should work based on testing with SECP256K1 keys but need to make sure that nothing funny 
             // happens when using the HD wallet keys. 
         }

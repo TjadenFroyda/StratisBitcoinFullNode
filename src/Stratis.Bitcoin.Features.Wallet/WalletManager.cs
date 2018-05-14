@@ -357,7 +357,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(seed, nameof(seed));
             Guard.NotEmpty(name, nameof(name));
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
-                       
+
             ExtKey masterKey = new ExtKey(seed.ToHex(this.network));
 
             // If no passphrase is given, will default to the wallet's name.

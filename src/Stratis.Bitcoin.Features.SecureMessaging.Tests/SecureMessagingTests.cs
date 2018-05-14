@@ -30,11 +30,13 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             // KeyPairs for Bob and Alice generated from https://kjur.github.io/jsrsasign/sample/sample-ecdsa.html using SECP256K1
             this.Alice = new TestPerson(
                 pub: "04bc888f2739cc9c9a5d595bf4da54a1fb6854c269f8e8ab0d3e94f71ba37d75a84b196ce0801eb13b94a181c4c34ed15f2ec1c5fd1899d8953a546b8c164d18c6",
-                priv: "6215a59058ba689889a3aa0e32d0f686ddb7a3ffae003376f4d0744eb7b61b19"
+                priv: "6215a59058ba689889a3aa0e32d0f686ddb7a3ffae003376f4d0744eb7b61b19",
+                net: this.network
             );
             this.Bob = new TestPerson(
                 pub: "049788818055d962297edbeb50431b8c44f545714bf0ce5471159cecd86c78efe2742778ad242ac325fb48217351f70782db8bf50f633b59f2bdbdcd1a08f1f7aa",
-                priv: "d57cc0624f024149c300c0897ac917c58142be3d6346797651c85ca8dbae05f8"
+                priv: "d57cc0624f024149c300c0897ac917c58142be3d6346797651c85ca8dbae05f8",
+                net: this.network
             );
         }
 
@@ -43,7 +45,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         {
             string privKeyHexString = "6215a59058ba689889a3aa0e32d0f686ddb7a3ffae003376f4d0744eb7b61b19";
             string pubKeyHexString = "04bc888f2739cc9c9a5d595bf4da54a1fb6854c269f8e8ab0d3e94f71ba37d75a84b196ce0801eb13b94a181c4c34ed15f2ec1c5fd1899d8953a546b8c164d18c6";
-            TestPerson me = new TestPerson(pubKeyHexString, privKeyHexString);
+            TestPerson me = new TestPerson(pubKeyHexString, privKeyHexString, this.network);
             Assert.Equal(me.GetPublicKeyHex(), pubKeyHexString);
             Assert.Equal(me.GetPrivateKeyHex() , privKeyHexString);
         }
@@ -167,11 +169,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         public void TestAliceLongMessageToBob()
         {
             // Set up
-            string AlicePlainTextMessage = @"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras eget varius massa. Nulla non dictum turpis, quis viverra odio. Suspendisse commodo, mauris at convallis scelerisque, quam diam sodales sapien, sit amet dictum odio tortor ut est. Nullam vulputate venenatis turpis vitae porttitor. Integer quis turpis dapibus, viverra orci vel, molestie odio. Aliquam pulvinar dapibus nisl, non vehicula est efficitur feugiat. Nunc egestas mi sit amet nibh pretium mollis. Vestibulum dui dui, elementum non tempor non, auctor nec ante. Quisque luctus pretium posuere. Quisque mattis, sem varius consectetur sollicitudin, ex arcu fermentum risus, id finibus risus leo et enim. In molestie volutpat arcu sit amet condimentum. Maecenas nec enim lobortis arcu imperdiet hendrerit. Maecenas pulvinar justo eget commodo fermentum. Nulla porttitor dapibus felis eu ultricies. 
-
-Phasellus ac dignissim velit, quis luctus lectus. Cras convallis vitae tortor rutrum commodo. Nunc vitae lobortis elit, eget gravida neque. Sed at auctor lorem. Vivamus cursus nibh lacus, quis cursus arcu volutpat vel. Aenean id gravida odio. Vestibulum a mollis elit.
-
-Quisque tellus dolor, tempor eu tortor sit amet, finibus tincidunt augue.Etiam odio justo, laoreet non nunc ut, posuere sodales urna. Nunc mattis et lectus at gravida. Proin vel risus vitae tortor faucibus posuere in et enim. Maecenas sit amet purus tincidunt justo fringilla tempus sit amet lobortis nunc. In ultricies, odio sed tempus rhoncus, urna mauris hendrerit dui, condimentum pretium enim eros id diam.Maecenas eu fermentum lorem. Cras id facilisis purus, non ultrices turpis. Pellentesque nisi tortor, viverra eu rhoncus sit amet, accumsan et ipsum.Praesent varius nibh ut vulputate dictum. Vestibulum quis suscipit purus, at sollicitudin augue. Maecenas ac maximus turpis, sed dignissim lacus. Nullam fermentum lobortis vulputate. Suspendisse ac magna pharetra arcu cursus tempus sed eu turpis. Aenean elementum a libero at commodo.";
+            string AlicePlainTextMessage = @"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras eget varius massa. Nulla non dictum turpis, quis viverra odio. Suspendisse commodo, mauris at convallis scelerisque, quam diam sodales sapien, sit amet dictum odio tortor ut est. Nullam vulputate venenatis turpis vitae porttitor. Integer quis turpis dapibus, viverra orci vel, molestie odio. Aliquam pulvinar dapibus nisl, non vehicula est efficitur feugiat. Nunc egestas mi sit amet nibh pretium mollis. Vestibulum dui dui, elementum non tempor non, auctor nec ante. Quisque luctus pretium posuere. Quisque mattis, sem varius consectetur sollicitudin, ex arcu fermentum risus, id finibus risus leo et enim. In molestie volutpat arcu sit amet condimentum. Maecenas nec enim lobortis arcu imperdiet hendrerit. Maecenas pulvinar justo eget commodo fermentum. Nulla porttitor dapibus felis eu ultricies. Phasellus ac dignissim velit, quis luctus lectus. Cras convallis vitae tortor rutrum commodo. Nunc vitae lobortis elit, eget gravida neque. Sed at auctor lorem. Vivamus cursus nibh lacus, quis cursus arcu volutpat vel. Aenean id gravida odio. Vestibulum a mollis elit. Quisque tellus dolor, tempor eu tortor sit amet, finibus tincidunt augue.Etiam odio justo, laoreet non nunc ut, posuere sodales urna. Nunc mattis et lectus at gravida. Proin vel risus vitae tortor faucibus posuere in et enim. Maecenas sit amet purus tincidunt justo fringilla tempus sit amet lobortis nunc. In ultricies, odio sed tempus rhoncus, urna mauris hendrerit dui, condimentum pretium enim eros id diam.Maecenas eu fermentum lorem. Cras id facilisis purus, non ultrices turpis. Pellentesque nisi tortor, viverra eu rhoncus sit amet, accumsan et ipsum.Praesent varius nibh ut vulputate dictum. Vestibulum quis suscipit purus, at sollicitudin augue. Maecenas ac maximus turpis, sed dignissim lacus. Nullam fermentum lobortis vulputate. Suspendisse ac magna pharetra arcu cursus tempus sed eu turpis. Aenean elementum a libero at commodo.";
             SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
             SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
 
@@ -193,7 +191,8 @@ Quisque tellus dolor, tempor eu tortor sit amet, finibus tincidunt augue.Etiam o
             string AlicePlainTextMessage = "I think Chad is spying on us.";
             TestPerson Chad = new TestPerson(
                 pub: "040c9ec013d34f362445ec1f3b87feaf857cee2ae45d8506c62a53ecb23147219993ee8dec6e1eaf25edf3757871df344636b1defe2b31b06ea5858e2c529db4d2",
-                priv: "3e4af283ebb2716f0212b7079466f3b75cc3d4189877ab7953e48c826eebdd4d"
+                priv: "3e4af283ebb2716f0212b7079466f3b75cc3d4189877ab7953e48c826eebdd4d",
+                net: this.network
             );
             SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
             SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
