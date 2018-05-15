@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="passphrase">The passphrase used in the seed.</param>
         /// <param name="creationTime">The date and time this wallet was created.</param>
         /// <returns>The recovered wallet.</returns>
-        Wallet RecoverWallet(Key sharedSecret, string name, DateTime creationTime, string passphrase);
+        Wallet RecoverWallet(ExtKey sharedSecret, string name, DateTime creationTime, string passphrase);
 
         /// <summary>
         /// Deletes a wallet.
