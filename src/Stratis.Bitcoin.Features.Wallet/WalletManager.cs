@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             ExtKey extendedKey;
             try
             {
-                RecoverWallet(HdOperations.GetHdPrivateKey(mnemonic, passphrase), name, creationTime, passphrase);
+                return RecoverWallet(HdOperations.GetHdPrivateKey(mnemonic, passphrase), name, creationTime, passphrase);
             }
             catch (NotSupportedException ex)
             {
