@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// <returns>The action.</returns>
         /// <param name="request">Request.</param>
         /// <param name="action">Action.</param>
-        internal string MessageAction(SecureMessageRequest request, Action action)
+        internal string MessageAction(ActionMessageRequest request, Action action)
         {
             Key privateKey = GetPrivateMessagingKey(request);
 			PubKey receiverPubKey = new PubKey(request.ReceiverPublicKey);
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// </summary>
         /// <returns>The private messaging pub key.</returns>
         /// <param name="request">Request.</param>
-        internal PubKey GetPrivateMessagingPubKey(SecureMessageRequest request){
+        internal PubKey GetPrivateMessagingPubKey(SecureMessageKeyRequest request){
             Key privateKey = GetPrivateMessagingKey(request);
             return privateKey.PubKey;
         }

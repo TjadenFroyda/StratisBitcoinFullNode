@@ -131,6 +131,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// <param name="hexEncodedEncryptedMessage">Hex encoded encrypted message.</param>
         public List<string> prepareOPReturnMessageList(string hexEncodedEncryptedMessage)
         {
+			// TODO: Prefix with ordering byte since blocks may not be confirmed in same order sent. 
             // Stratis examples have shown 40 as max limit, but is 83 in NBitcoin/StandardScriptTemplate.cs
             // Sticking with 40 for now
             List<string> chunks = (List<string>)ChunksUpto(hexEncodedEncryptedMessage, 40);

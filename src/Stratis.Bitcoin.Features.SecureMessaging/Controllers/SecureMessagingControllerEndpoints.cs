@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// <param name="request">Request.</param>
         [Route("encrypt-message")]
         [HttpPost]
-        public IActionResult EncryptMessage([FromBody] SecureMessageRequest request)
+        public IActionResult EncryptMessage([FromBody] ActionMessageRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// <param name="request">Request.</param>
         [Route("decrypt-message")]
         [HttpPost]
-        public IActionResult DecryptMessage([FromBody] SecureMessageRequest request)
+        public IActionResult DecryptMessage([FromBody] ActionMessageRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
 
         [Route("get-securemessaging-privatekey")]
         [HttpPost]
-        public IActionResult GetSecureMessagingPrivateKey([FromBody] SecureMessageRequest request)
+        public IActionResult GetSecureMessagingPrivateKey([FromBody] SecureMessageKeyRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
 
         [Route("get-securemessaging-publickey")]
         [HttpPost]
-        public IActionResult GetSecureMessagingPublicKey([FromBody] SecureMessageRequest request)
+        public IActionResult GetSecureMessagingPublicKey([FromBody] SecureMessageKeyRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
