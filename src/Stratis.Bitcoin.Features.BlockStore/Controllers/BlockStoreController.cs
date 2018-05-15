@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
@@ -20,11 +21,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     {
         private readonly IBlockStoreCache blockStoreCache;
         private readonly ILogger logger;
+        protected readonly ILoggerFactory loggerFactory;
+        private readonly IPooledTransaction pooledTransaction;
 
-        public BlockStoreController(ILoggerFactory loggerFactory, IBlockStoreCache blockStoreCache)
+
+        public BlockStoreController(
+            ILoggerFactory loggerFactory, 
+            IBlockStoreCache blockStoreCache, 
+            IPooledTransaction pooledTransaction = null)
         {
             this.blockStoreCache = blockStoreCache;         
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.loggerFactory = loggerFactory;
+            this.pooledTransaction = pooledTransaction;
+
         }
 
         [Route("block")]
@@ -80,6 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 if (trx == null)
                 {
                     var blockStore = this.FullNode.NodeFeature<IBlockStore>();
+                    
                     trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
                 }
                 if (trx == null)
