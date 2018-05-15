@@ -54,6 +54,56 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         }
 
         /// <summary>
+        /// Builds an <see cref="IActionResult"/> containing the transaction for the given txid.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns>The transaction</returns>
+        [Route("getrawtransaction")]
+        [HttpGet]
+        public IActionResult GetRawTransaction([FromQuery] GetRawTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            this.logger.LogTrace("({0}:'{1}')", nameof(GetRawTransactionRequest.txid), request.txid);
+
+            try
+            {
+                uint256 trxid; 
+                if (!uint256.TryParse(txid, out trxid)) 
+                {
+                    throw new ArgumentException(nameof(txid)); 
+                }
+                Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(trxid) : null;
+                if (trx == null)
+                {
+                    var blockStore = this.FullNode.NodeFeature<IBlockStore>();
+                    trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
+                }
+                if (trx == null)
+                {
+                    throw new Exception("Txid not found.");
+                }
+                if (verbose != 0)
+                {
+                    ChainedHeader block = await this.GetTransactionBlockAsync(trxid);
+                    return this.Json(TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip));
+                }
+                else
+                {
+                    return this.Json(TransactionBriefModel(trx));
+                }
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>
         /// <returns>A result containing the errors.</returns>
