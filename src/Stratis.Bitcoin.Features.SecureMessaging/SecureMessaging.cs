@@ -4,7 +4,10 @@ using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Collections.Generic;
+using System.Text;
 
 // TODO: Add Logging
 // TODO: Add/improve comments
@@ -107,7 +110,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         private List<string> buildOPReturnMessageList(string plaintextMessage) 
         {
             string compressedString;
-            using (MemoryStream outputStream = new MemoryStream())
+            using (var outputStream = new MemoryStream())
             {
                 using (GZipStream gZipStream = new GZipStream(outputStream, CompressionMode.Compress))
                 {

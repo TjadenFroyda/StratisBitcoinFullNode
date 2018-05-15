@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             Domain domain = this.ReadDomainJson(jObject, NameFieldName);
             Domain pointerDomain = this.ReadDomainJson(jObject, PointerDomainNameFieldName);
-            return new PointerResourceRecord((IPAddress)domain, pointerDomain);
+            return new PointerResourceRecord(domain, pointerDomain);
         }
 
         /// <summary>
