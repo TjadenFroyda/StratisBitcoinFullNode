@@ -11,7 +11,6 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Models
         [Required(ErrorMessage = "The message is missing")]
         public string Message { get; set; }
  
-        [Required(ErrorMessage = "The Account Name is missing")]
         public string AccountName { get; set; }
  
         [Required(ErrorMessage = "The receiver's public key is required.")]

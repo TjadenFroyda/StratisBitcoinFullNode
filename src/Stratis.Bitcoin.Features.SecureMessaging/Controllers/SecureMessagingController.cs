@@ -26,7 +26,6 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
     /// <summary>
     /// Controller providing SecureMessaging operations
     /// </summary>
-    [Route("api/[controller]")]
     public partial class SecureMessagingController : Controller
     {
         /// <summary>Instance logger.</summary>

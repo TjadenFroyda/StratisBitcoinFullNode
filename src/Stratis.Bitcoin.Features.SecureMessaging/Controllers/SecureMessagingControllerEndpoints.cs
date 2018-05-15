@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             }
             try
             {
-                return Json(MessageAction(request, Action.Encrypt));
+                return Json(this.MessageAction(request, Action.Encrypt));
             }
             catch (Exception e)
             {
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             }
             try
             {
-                return Json(MessageAction(request, Action.Decrypt));
+                return Json(this.MessageAction(request, Action.Decrypt));
             }
             catch (Exception e)
             {
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             }
             try
             {
-                return BuildAndSendTransactionBatch(request);
+                return this.BuildAndSendTransactionBatch(request);
             }
             catch (Exception e)
             {
