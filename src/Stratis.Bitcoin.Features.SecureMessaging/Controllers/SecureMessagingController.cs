@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
 using Stratis.Bitcoin.Features.SecureMessaging.Models;
 using Stratis.Bitcoin.Features.Wallet;
@@ -101,7 +102,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         internal string MessageAction(SecureMessageRequest request, Action action)
         {
             Key privateKey = GetPrivateMessagingKey(request);
-            PubKey receiverPubKey = request.ReceiverPublicKey == null ? new PubKey(request.ReceiverPublicKey) : throw new SecureMessageException("Please enter the receiver's public key");
+			PubKey receiverPubKey = new PubKey(request.ReceiverPublicKey);
             this.secureMessaging = new SecureMessaging(privateKey, receiverPubKey, this.network);
             if (action == Action.Encrypt)
             {
@@ -133,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         {
             if (request.SenderPrivateKey != null)
             {
-                return Key.Parse(request.SenderPrivateKey, this.network);
+				return new Key(Encoders.Hex.DecodeData(request.SenderPrivateKey));
             }
             else if (request.WalletName != null || request.Passphrase != null)
             {
