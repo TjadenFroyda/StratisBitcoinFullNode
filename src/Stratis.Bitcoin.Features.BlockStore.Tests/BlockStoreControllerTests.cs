@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
@@ -30,6 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             "68dd9970c1b3147cbd6ed8";
 
         private const string InvalidHash = "This hash is no good";
+
 
         [Fact]
         public void GetBlock_With_null_Hash_IsInvalid()
@@ -135,14 +138,34 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 ((Block)(result.Value)).ToHex(Network.StratisTest).Should().Be(BlockAsHex); 
         }
 
+        [Fact]
+        public void GetRawTransactionConformsToAPI()
+        {
+         // var tx = Transaction.Parse("01000000ac55a957010000000000000000000000000000000000000000000000000000000000000000ffffffff0401320103ffffffff010084d717000000001976a9143ac0dad2ad42e35fcd745d7511d47c24ad6580b588ac00000000");
+         // Transaction tx2 = rpc.GetRawTransaction(uint256.Parse("a6783a0933942d37dcb5fb923ddd343522036de23fbc658f2ad2a9f1428ca19d"));
+         // Assert.Equal(tx.GetHash(), tx2.GetHash());
+        }
+
+
+
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()
         {
-            var logger = new Mock<ILoggerFactory>();
-            var cache = new Mock<IBlockStoreCache>();
+            Mock<ILoggerFactory> logger = new Mock<ILoggerFactory>();
+            Mock<IBlockStoreCache> cache = new Mock<IBlockStoreCache>();
+            Mock<IFullNode> fullNode = new Mock<IFullNode>();
+            Mock<ChainBase> chainBase = new Mock<ChainBase>();
+            Mock<IChainState> chainState = new Mock<IChainState>();
+            Network network = Network.StratisTest;
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var controller = new BlockStoreController(logger.Object, cache.Object);
+            BlockStoreController controller = new BlockStoreController(
+                logger.Object, 
+                cache.Object,
+                fullNode.Object,
+                chainBase.Object,
+                chainState.Object,
+                network);
 
             return (cache, controller);
         }
