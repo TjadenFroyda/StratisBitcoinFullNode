@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Api;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
 using Stratis.Bitcoin.Features.SecureMessaging.Models;
 using Stratis.Bitcoin.Features.Wallet;
@@ -27,7 +27,6 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
     /// <summary>
     /// Controller providing SecureMessaging operations
     /// </summary>
-    [Route("api/[controller]")]
     public partial class SecureMessagingController : Controller
     {
         /// <summary>Instance logger.</summary>
@@ -100,10 +99,10 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// <returns>The action.</returns>
         /// <param name="request">Request.</param>
         /// <param name="action">Action.</param>
-        internal string MessageAction(SecureMessageRequest request, Action action)
+        internal string MessageAction(ActionMessageRequest request, Action action)
         {
             Key privateKey = GetPrivateMessagingKey(request);
-            PubKey receiverPubKey = request.ReceiverPublicKey == null ? new PubKey(request.ReceiverPublicKey) : throw new SecureMessageException("Please enter the receiver's public key");
+			PubKey receiverPubKey = new PubKey(request.ReceiverPublicKey);
             this.secureMessaging = new SecureMessaging(privateKey, receiverPubKey, this.network);
             if (action == Action.Encrypt)
             {
@@ -121,7 +120,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// <param name="name">The name of the new conversation wallet</param>
         /// <param name="handshakeTime">The time of the handshake to exchange pubkeys (or now)</param>
         /// <returns></returns>
-        internal Wallet.Wallet RecoverWalletFromSeed(Key sharedSecret, string name, DateTime handshakeTime)
+        internal Wallet.Wallet RecoverWalletFromSeed(ExtKey sharedSecret, string name, DateTime handshakeTime)
         {
             return this.fullNode.NodeService<WalletManager>().RecoverWallet(sharedSecret, name, handshakeTime);
         }
@@ -135,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         {
             if (request.SenderPrivateKey != null)
             {
-                return Key.Parse(request.SenderPrivateKey, this.network);
+				return new Key(Encoders.Hex.DecodeData(request.SenderPrivateKey));
             }
             else if (request.WalletName != null || request.Passphrase != null)
             {
@@ -154,7 +153,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// </summary>
         /// <returns>The private messaging pub key.</returns>
         /// <param name="request">Request.</param>
-        internal PubKey GetPrivateMessagingPubKey(SecureMessageRequest request){
+        internal PubKey GetPrivateMessagingPubKey(SecureMessageKeyRequest request){
             Key privateKey = GetPrivateMessagingKey(request);
             return privateKey.PubKey;
         }

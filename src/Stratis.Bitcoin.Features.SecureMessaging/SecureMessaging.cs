@@ -4,7 +4,10 @@ using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SecureMessaging.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Collections.Generic;
+using System.Text;
 
 // TODO: Add Logging
 // TODO: Add/improve comments
@@ -107,7 +110,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         private List<string> buildOPReturnMessageList(string plaintextMessage) 
         {
             string compressedString;
-            using (MemoryStream outputStream = new MemoryStream())
+            using (var outputStream = new MemoryStream())
             {
                 using (GZipStream gZipStream = new GZipStream(outputStream, CompressionMode.Compress))
                 {
@@ -128,6 +131,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         /// <param name="hexEncodedEncryptedMessage">Hex encoded encrypted message.</param>
         public List<string> prepareOPReturnMessageList(string hexEncodedEncryptedMessage)
         {
+			// TODO: Prefix with ordering byte since blocks may not be confirmed in same order sent. 
             // Stratis examples have shown 40 as max limit, but is 83 in NBitcoin/StandardScriptTemplate.cs
             // Sticking with 40 for now
             List<string> chunks = (List<string>)ChunksUpto(hexEncodedEncryptedMessage, 40);
