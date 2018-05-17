@@ -137,12 +137,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()
         {
-            var logger = new Mock<ILoggerFactory>();
-            var cache = new Mock<IBlockStoreCache>();
+            Mock<ILoggerFactory> logger = new Mock<ILoggerFactory>();
+            Mock<IBlockStoreCache> cache = new Mock<IBlockStoreCache>();
+            Mock<ConcurrentChain> chain = new Mock<ConcurrentChain>();
+            Mock<IChainState> chainState = new Mock<IChainState>();
+            Mock<IBlockRepository> repository = new Mock<IBlockRepository>();
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var controller = new BlockStoreController(logger.Object, cache.Object);
+            var controller = new BlockStoreController(
+                logger.Object,
+                cache.Object,
+                repository.Object,
+                Network.StratisTest,
+                chain.Object,
+                chainState.Object
+                );
 
             return (cache, controller);
         }

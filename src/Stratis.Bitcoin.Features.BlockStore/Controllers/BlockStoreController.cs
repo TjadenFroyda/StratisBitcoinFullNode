@@ -7,8 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Controllers
@@ -20,21 +21,33 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     public class BlockStoreController : Controller
     {
         private readonly IBlockStoreCache blockStoreCache;
+        private readonly IBlockRepository blockRepository;
         private readonly ILogger logger;
-        protected readonly ILoggerFactory loggerFactory;
-        private readonly IPooledTransaction pooledTransaction;
-
+        private readonly IFullNode fullNode;
+        private readonly Network network;
+        private readonly ConcurrentChain chain;
+        private readonly IChainState chainState;
 
         public BlockStoreController(
-            ILoggerFactory loggerFactory, 
-            IBlockStoreCache blockStoreCache, 
-            IPooledTransaction pooledTransaction = null)
+            ILoggerFactory loggerFactory,
+            IBlockStoreCache blockStoreCache,
+            IBlockRepository blockRepository,
+            Network network,
+            ConcurrentChain chain,
+            IChainState chainState)
         {
-            this.blockStoreCache = blockStoreCache;         
+            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
+            Guard.NotNull(blockRepository, nameof(blockRepository));
+            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainState, nameof(chainState));
+            Guard.NotNull(network, nameof(network));
+            
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.loggerFactory = loggerFactory;
-            this.pooledTransaction = pooledTransaction;
-
+            this.blockRepository = blockRepository;
+            this.blockStoreCache = blockStoreCache;
+            this.network = network;
+            this.chain = chain;
+            this.chainState = chainState;
         }
 
         [Route("block")]
@@ -50,12 +63,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
             try
             {
-                var block = await this.blockStoreCache.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
-                if(block == null) return new NotFoundObjectResult("Block not found");
-                return query.OutputJson 
+                Block block = await this.blockStoreCache.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
+                if (block == null) return new NotFoundObjectResult("Block not found");
+                return query.OutputJson
                     ? this.Json(new BlockModel(block))
                     : this.Json(block);
-            } 
+            }
             catch (Exception e)
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
@@ -63,48 +76,44 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             }
         }
 
-        /// <summary>
-        /// Builds an <see cref="IActionResult"/> containing the transaction for the given txid.
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns>The transaction</returns>
+
         [Route("getrawtransaction")]
         [HttpGet]
-        public IActionResult GetRawTransaction([FromQuery] GetRawTransactionRequest request)
+        public async Task<IActionResult> GetRawTransactionkAsync([FromQuery] GetRawTransactionRequest query)
         {
             if (!this.ModelState.IsValid)
             {
                 return BuildErrorResponse(this.ModelState);
             }
 
-            this.logger.LogTrace("({0}:'{1}')", nameof(GetRawTransactionRequest.txid), request.txid);
+            this.logger.LogTrace("({0}:'{1}')", nameof(GetRawTransactionRequest.txid), query.txid);
 
             try
             {
-                uint256 trxid; 
-                if (!uint256.TryParse(txid, out trxid)) 
+                uint256 trxid;
+                if (!uint256.TryParse(query.txid, out trxid))
                 {
-                    throw new ArgumentException(nameof(txid)); 
+                    throw new ArgumentException(nameof(query.txid));
                 }
-                Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(trxid) : null;
+                Transaction trx = await this.blockRepository.GetTrxAsync(trxid);                
                 if (trx == null)
                 {
-                    var blockStore = this.FullNode.NodeFeature<IBlockStore>();
-                    
-                    trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
+                  return new NotFoundObjectResult("Transaction not found");
                 }
-                if (trx == null)
+
+                if (query.verbose != 0 && query.OutputJson != false)
                 {
-                    throw new Exception("Txid not found.");
+                    uint256 blockid = await this.blockRepository.GetTrxBlockIdAsync(trxid);
+                    ChainedHeader block = this.chain?.GetBlock(blockid);
+                    return this.Json(new TransactionVerboseModel(trx, this.network, block, this.chainState?.ConsensusTip));
                 }
-                if (verbose != 0)
+                else if (query.verbose == 0 && query.OutputJson != false) 
                 {
-                    ChainedHeader block = await this.GetTransactionBlockAsync(trxid);
-                    return this.Json(TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip));
+                    return this.Json(new TransactionBriefModel(trx));
                 }
                 else
                 {
-                    return this.Json(TransactionBriefModel(trx));
+                    return this.Json(trx);
                 }
             }
             catch (Exception e)
@@ -125,6 +134,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 HttpStatusCode.BadRequest,
                 string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)),
                 string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message)));
-        }
+        }        
     }
 }
