@@ -138,35 +138,69 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 ((Block)(result.Value)).ToHex(Network.StratisTest).Should().Be(BlockAsHex); 
         }
 
+        /*
+        //TODO
         [Fact]
-        public void GetRawTransactionConformsToAPI()
+        public async Task GetRawTransactionAsync_TransactionCannotBeFound_ReturnsNullAsync()
         {
-         // var tx = Transaction.Parse("01000000ac55a957010000000000000000000000000000000000000000000000000000000000000000ffffffff0401320103ffffffff010084d717000000001976a9143ac0dad2ad42e35fcd745d7511d47c24ad6580b588ac00000000");
-         // Transaction tx2 = rpc.GetRawTransaction(uint256.Parse("a6783a0933942d37dcb5fb923ddd343522036de23fbc658f2ad2a9f1428ca19d"));
-         // Assert.Equal(tx.GetHash(), tx2.GetHash());
+            uint256 txId = new uint256(12142124);
+            this.pooledTransaction.Setup(p => p.GetTransaction(txId))
+                .ReturnsAsync((Transaction)null)
+                .Verifiable();
+
+            var blockStore = new Mock<IBlockStore>();
+            blockStore.Setup(b => b.GetTrxAsync(txId))
+                .ReturnsAsync((Transaction)null)
+                .Verifiable();
+
+            this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
+                .Returns(blockStore.Object);
+
+            var result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+
+            Assert.Null(result);
+            this.pooledTransaction.Verify();
+            blockStore.Verify();
         }
 
+        // TODO
+        [Fact]
+        public async Task GetRawTransactionAsync_PooledTransactionAndBlockStoreServiceNotAvailable_ReturnsNullAsync()
+        {
+            uint256 txId = new uint256(12142124);
 
+            this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
+                .Returns(default(IBlockStore))
+                .Verifiable();
+
+            this.controller = new FullNodeController(this.LoggerFactory.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+            var result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+
+            Assert.Null(result);
+            this.fullNode.Verify();
+        }
+        */
 
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()
         {
             Mock<ILoggerFactory> logger = new Mock<ILoggerFactory>();
             Mock<IBlockStoreCache> cache = new Mock<IBlockStoreCache>();
-            Mock<IFullNode> fullNode = new Mock<IFullNode>();
-            Mock<ChainBase> chainBase = new Mock<ChainBase>();
+            Mock<ConcurrentChain> chain = new Mock<ConcurrentChain>();
             Mock<IChainState> chainState = new Mock<IChainState>();
-            Network network = Network.StratisTest;
+            Mock<IBlockRepository> repository = new Mock<IBlockRepository>();
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            BlockStoreController controller = new BlockStoreController(
-                logger.Object, 
+            var controller = new BlockStoreController(
+                logger.Object,
                 cache.Object,
-                fullNode.Object,
-                chainBase.Object,
-                chainState.Object,
-                network);
-
+                repository.Object,
+                Network.StratisTest,
+                chain.Object,
+                chainState.Object
+                );
+  
             return (cache, controller);
         }
     }
