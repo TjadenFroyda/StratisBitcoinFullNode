@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 {
                     throw new ArgumentException(nameof(query.txid));
                 }
-                Transaction trx = await this.blockRepository.GetTrxAsync(trxid);                
+                Transaction trx = await this.blockRepository?.GetTrxAsync(trxid);                
                 if (trx == null)
                 {
                   return new NotFoundObjectResult("Transaction not found");
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
                 if (query.verbose != 0 && query.OutputJson != false)
                 {
-                    uint256 blockid = await this.blockRepository.GetTrxBlockIdAsync(trxid);
+                    uint256 blockid = await this.blockRepository?.GetTrxBlockIdAsync(trxid);
                     ChainedHeader block = this.chain?.GetBlock(blockid);
                     return this.Json(new TransactionVerboseModel(trx, this.network, block, this.chainState?.ConsensusTip));
                 }

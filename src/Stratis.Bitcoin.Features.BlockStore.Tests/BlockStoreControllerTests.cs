@@ -135,6 +135,49 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 ((Block)(result.Value)).ToHex(Network.StratisTest).Should().Be(BlockAsHex); 
         }
 
+        /*
+        //TODO
+        [Fact]
+        public async Task GetRawTransactionAsync_TransactionCannotBeFound_ReturnsNullAsync()
+        {
+            uint256 txId = new uint256(12142124);
+            this.pooledTransaction.Setup(p => p.GetTransaction(txId))
+                .ReturnsAsync((Transaction)null)
+                .Verifiable();
+
+            var blockStore = new Mock<IBlockStore>();
+            blockStore.Setup(b => b.GetTrxAsync(txId))
+                .ReturnsAsync((Transaction)null)
+                .Verifiable();
+
+            this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
+                .Returns(blockStore.Object);
+
+            var result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+
+            Assert.Null(result);
+            this.pooledTransaction.Verify();
+            blockStore.Verify();
+        }
+
+        // TODO
+        [Fact]
+        public async Task GetRawTransactionAsync_PooledTransactionAndBlockStoreServiceNotAvailable_ReturnsNullAsync()
+        {
+            uint256 txId = new uint256(12142124);
+
+            this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
+                .Returns(default(IBlockStore))
+                .Verifiable();
+
+            this.controller = new FullNodeController(this.LoggerFactory.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
+                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
+            var result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+
+            Assert.Null(result);
+            this.fullNode.Verify();
+        }
+        */
 
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()
         {
