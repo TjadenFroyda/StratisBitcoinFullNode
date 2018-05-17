@@ -135,6 +135,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 ((Block)(result.Value)).ToHex(Network.StratisTest).Should().Be(BlockAsHex); 
         }
 
+
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()
         {
             Mock<ILoggerFactory> logger = new Mock<ILoggerFactory>();
