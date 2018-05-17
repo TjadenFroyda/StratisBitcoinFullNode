@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 uint256 trxid;
                 if (!uint256.TryParse(query.txid, out trxid))
                 {
-                    throw new ArgumentException(nameof(query.txid));
+                    throw new ArgumentException("Invalid transaction hash given");
                 }
                 Transaction trx = await this.blockRepository?.GetTrxAsync(trxid);                
                 if (trx == null)
