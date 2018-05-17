@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
@@ -30,6 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             "68dd9970c1b3147cbd6ed8";
 
         private const string InvalidHash = "This hash is no good";
+
 
         [Fact]
         public void GetBlock_With_null_Hash_IsInvalid()
@@ -197,7 +200,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 chain.Object,
                 chainState.Object
                 );
-
+  
             return (cache, controller);
         }
     }

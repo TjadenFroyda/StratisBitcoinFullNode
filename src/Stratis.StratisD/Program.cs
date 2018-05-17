@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Features.SecureMessaging;
 
 namespace Stratis.StratisD
 {
@@ -37,6 +38,7 @@ namespace Stratis.StratisD
                     .UseBlockStore()
                     .UseMempool()
                     .UseWallet()
+                    .UseSecureMessagingFeature()
                     .AddPowPosMining()
                     .UseApi()
                     .AddRPC()
