@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
         [Route("getrawtransaction")]
         [HttpGet]
-        public async Task<IActionResult> GetRawTransactionkAsync([FromQuery] GetRawTransactionRequest query)
+        public async Task<IActionResult> GetRawTransactionAsync([FromQuery] GetRawTransactionRequest query)
         {
             if (!this.ModelState.IsValid)
             {
@@ -90,15 +90,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
             try
             {
-                uint256 trxid;
-                if (!uint256.TryParse(query.txid, out trxid))
-                {
-                    throw new ArgumentException("Invalid transaction hash given");
-                }
-                Transaction trx = await this.blockRepository?.GetTrxAsync(trxid);                
+                uint256 trxid = uint256.Parse(query.txid);
+                Transaction trx = await this.blockRepository?.GetTrxAsync(trxid);
                 if (trx == null)
                 {
-                  return new NotFoundObjectResult("Transaction not found");
+                    return new NotFoundObjectResult("Transaction not found");
                 }
 
                 if (query.verbose != 0 && query.OutputJson != false)
@@ -107,7 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                     ChainedHeader block = this.chain?.GetBlock(blockid);
                     return this.Json(new TransactionVerboseModel(trx, this.network, block, this.chainState?.ConsensusTip));
                 }
-                else if (query.verbose == 0 && query.OutputJson != false) 
+                else if (query.verbose == 0 && query.OutputJson != false)
                 {
                     return this.Json(new TransactionBriefModel(trx));
                 }
@@ -115,6 +111,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 {
                     return this.Json(trx);
                 }
+            }
+            catch(FormatException e)
+            {
+                return new NotFoundObjectResult("Invalid Hex String");
+            }
+            catch(NullReferenceException e)
+            {
+                return new NotFoundObjectResult("Invalid Hex String");
             }
             catch (Exception e)
             {

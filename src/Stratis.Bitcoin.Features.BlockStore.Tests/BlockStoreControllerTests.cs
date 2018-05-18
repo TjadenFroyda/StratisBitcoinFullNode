@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
@@ -17,8 +18,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     public class BlockStoreControllerTests
     {
-        private const string ValidHash = "09d889192a45ba033d4fb886d7aa62bd19b36697211b3d02ac254cf47e2326b0";
-
+        private const string ValidBlockHash = "09d889192a45ba033d4fb886d7aa62bd19b36697211b3d02ac254cf47e2326b0";
+        private const string ValidTrxHash = "7416294c456639307f42740a9f0f6a1101a0c34cde3e0c055ca7ee11fee2f88c";
         private const string BlockAsHex =
             "07000000867ccd8f8b21f48e1423d2217fdfe0ea5108dcd6f3371933d584e8f250f5c6600fdf4ccef23cbdb6d81e6bde" +
             "a2f0f45aca69a35a9817590c60b5a4ce4a44d1cc30c644592060041a00000000020100000030c6445901000000000000" +
@@ -30,6 +31,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             "9f4f5ac02d3e5f9114253470838ee73c9ba507262ba4db7f0b3f840cf0e1d3ac00000000463044022002efd3facb7bc9" +
             "9407d0f7c6b9c8e80898608f63f3141b06371bbd5e762dd4ab02204f1a5e8cca1a70a5b6dee55746f100042e3479c291" +
             "68dd9970c1b3147cbd6ed8";
+
+        private const string TrxAsHex = "0100000030c6445901795088bf033121a794ea35a11d39dbcd2495b64756e6de76d8" +
+            "6944fdeea4ddbc02000000484730440220096615c8fdec79ecf477cea2104859f7db98ed883f242b08fef316e3abd41a" +
+            "30022070d82dd743eeed324e90cb3c168144031ba8c8b14a6af167b98253614be3d23c01ffffffff0300000000000000" + 
+            "000000011f4a8b000000232102e89f4f5ac02d3e5f9114253470838ee73c9ba507262ba4db7f0b3f840cf0e1d3ac4043" + 
+            "2e4a8b000000232102e89f4f5ac02d3e5f9114253470838ee73c9ba507262ba4db7f0b3f840cf0e1d3ac00000000";
 
         private const string InvalidHash = "This hash is no good";
 
@@ -79,7 +86,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 .Returns(Task.FromResult((Block)null));
 
             var response = controller.GetBlockAsync(new SearchByHashRequest()
-            { Hash = ValidHash, OutputJson = true });
+            { Hash = ValidBlockHash, OutputJson = true });
 
             response.Result.Should().BeOfType<NotFoundObjectResult>();
             var notFoundObjectResult = (NotFoundObjectResult)response.Result;
@@ -111,13 +118,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 .Returns(Task.FromResult(Block.Parse(BlockAsHex, Network.StratisTest)));
 
             var response = controller.GetBlockAsync(new SearchByHashRequest()
-                {Hash = ValidHash, OutputJson = true});
+                {Hash = ValidBlockHash, OutputJson = true});
 
             response.Result.Should().BeOfType<JsonResult>();
             var result = (JsonResult) response.Result;
 
             result.Value.Should().BeOfType<Models.BlockModel>();
-            ((BlockModel) result.Value).Hash.Should().Be(ValidHash);
+            ((BlockModel) result.Value).Hash.Should().Be(ValidBlockHash);
             ((BlockModel) result.Value).MerkleRoot.Should()
                 .Be("ccd1444acea4b5600c5917985aa369ca5af4f0a2de6b1ed8b6bd3cf2ce4cdf0f");
         }
@@ -131,56 +138,66 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                     .Returns(Task.FromResult(Block.Parse(BlockAsHex, Network.StratisTest)));
 
                 var response = controller.GetBlockAsync(new SearchByHashRequest()
-                { Hash = ValidHash, OutputJson = false });
+                { Hash = ValidBlockHash, OutputJson = false });
 
                 response.Result.Should().BeOfType<JsonResult>();
                 var result = (JsonResult)response.Result;
                 ((Block)(result.Value)).ToHex(Network.StratisTest).Should().Be(BlockAsHex); 
         }
 
-        /*
-        //TODO
         [Fact]
-        public async Task GetRawTransactionAsync_TransactionCannotBeFound_ReturnsNullAsync()
+        public async Task GetRawTransactionAsync_TransactionInvalidHexLength_ReturnsError()
         {
-            uint256 txId = new uint256(12142124);
-            this.pooledTransaction.Setup(p => p.GetTransaction(txId))
-                .ReturnsAsync((Transaction)null)
-                .Verifiable();
+            var (cache, controller) = GetControllerAndCache();
 
-            var blockStore = new Mock<IBlockStore>();
-            blockStore.Setup(b => b.GetTrxAsync(txId))
-                .ReturnsAsync((Transaction)null)
-                .Verifiable();
-
-            this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
-                .Returns(blockStore.Object);
-
-            var result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
-
-            Assert.Null(result);
-            this.pooledTransaction.Verify();
-            blockStore.Verify();
+            GetRawTransactionRequest request = new GetRawTransactionRequest
+            {
+                txid = InvalidHash,
+                verbose = 1,
+                OutputJson = true
+            };
+            var response = controller?.GetRawTransactionAsync(request);
+            response.Result.Should().BeOfType<NotFoundObjectResult>();
+            var notFoundObjectResult = (NotFoundObjectResult)response.Result;
+            notFoundObjectResult.StatusCode.Should().Be(404);
+            notFoundObjectResult.Value.Should().Be("Invalid Hex String");
         }
 
-        // TODO
         [Fact]
-        public async Task GetRawTransactionAsync_PooledTransactionAndBlockStoreServiceNotAvailable_ReturnsNullAsync()
+        public async Task GetRawTransactionAsync_TransactionNull_ReturnsError()
         {
-            uint256 txId = new uint256(12142124);
+            var (cache, controller) = GetControllerAndCache();
 
-            this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
-                .Returns(default(IBlockStore))
-                .Verifiable();
-
-            this.controller = new FullNodeController(this.LoggerFactory.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
-                this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
-            var result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
-
-            Assert.Null(result);
-            this.fullNode.Verify();
+            GetRawTransactionRequest request = new GetRawTransactionRequest
+            {
+                txid = null,
+                verbose = 1,
+                OutputJson = true
+            };
+            var response = controller?.GetRawTransactionAsync(request);
+            response.Result.Should().BeOfType<NotFoundObjectResult>();
+            var notFoundObjectResult = (NotFoundObjectResult)response.Result;
+            notFoundObjectResult.StatusCode.Should().Be(404);
+            notFoundObjectResult.Value.Should().Be("Invalid Hex String");
         }
-        */
+
+        [Fact]
+        public async Task GetRawTransactionAsync_TransactionCannotBeFound_ReturnsException()
+        {
+            var (cache, controller) = GetControllerAndCache();
+
+            GetRawTransactionRequest request = new GetRawTransactionRequest
+            {
+                txid = "7416294c456639307f42740a9f0f6a1101a0c34cde3e0c055ca7ee11fee2eeec",
+                verbose = 1,
+                OutputJson = true
+            };
+            var response = controller?.GetRawTransactionAsync(request);
+            response.Result.Should().BeOfType<NotFoundObjectResult>();
+            var notFoundObjectResult = (NotFoundObjectResult)response.Result;
+            notFoundObjectResult.StatusCode.Should().Be(404);
+            notFoundObjectResult.Value.Should().Be("Transaction not found");
+        }
 
         private static (Mock<IBlockStoreCache> cache, BlockStoreController controller) GetControllerAndCache()
         {
