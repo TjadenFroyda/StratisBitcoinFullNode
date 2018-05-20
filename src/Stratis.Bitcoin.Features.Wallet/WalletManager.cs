@@ -279,34 +279,26 @@ namespace Stratis.Bitcoin.Features.Wallet
             return wallet;
         }
 
-        /// <inheritdoc />
-        public Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="seedExtKey"></param>
+        /// <param name="name"></param>
+        /// <param name="creationTime"></param>
+        /// <param name="passphrase"></param>
+        /// <returns></returns>
+        public Wallet RecoverWallet(ExtKey extendedKey, string password, string name, DateTime creationTime, string passphrase = null)
         {
-            Guard.NotEmpty(password, nameof(password));
+            Guard.NotNull(extendedKey, nameof(extendedKey));
             Guard.NotEmpty(name, nameof(name));
-            Guard.NotEmpty(mnemonic, nameof(mnemonic));
+            Guard.NotNull(creationTime, nameof(creationTime));
+            Guard.NotEmpty(password, nameof(password));
+
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
 
             // For now the passphrase is set to be the password by default.
             if (passphrase == null)
                 passphrase = password;
-
-            // Generate the root seed used to generate keys.
-            ExtKey extendedKey;
-            try
-            {
-                extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
-            }
-            catch (NotSupportedException ex)
-            {
-                this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
-                this.logger.LogTrace("(-)[EXCEPTION]");
-
-                if (ex.Message == "Unknown")
-                    throw new WalletException("Please make sure you enter valid mnemonic words.");
-
-                throw;
-            }
 
             // Create a wallet file.
             string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
@@ -340,6 +332,34 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger.LogTrace("(-)");
             return wallet;
+        }
+
+
+        /// <inheritdoc />
+        public Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null)
+        {
+            Guard.NotEmpty(password, nameof(password));
+            Guard.NotEmpty(name, nameof(name));
+            Guard.NotEmpty(mnemonic, nameof(mnemonic));
+            this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
+
+            // Generate the root seed used to generate keys.
+            ExtKey extendedKey;
+            try
+            {
+                extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
+                return this.RecoverWallet(extendedKey, password, name, creationTime, passphrase);
+            }
+            catch (NotSupportedException ex)
+            {
+                this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+                this.logger.LogTrace("(-)[EXCEPTION]");
+
+                if (ex.Message == "Unknown")
+                    throw new WalletException("Please make sure you enter valid mnemonic words.");
+
+                throw;
+            }            
         }
 
         /// <inheritdoc />

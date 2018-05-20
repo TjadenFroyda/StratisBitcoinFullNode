@@ -71,18 +71,18 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
                 new NodeLifetime(), 
                 DateTimeProvider.Default
             );
-            string passphrase = "This is an awesome passphrase";
+            string password = "This is an awesome password";
  
             // Act
             Wallet.Wallet AliceWallet = walletManager.RecoverWallet(
                 new ExtKey(this.Alice.GetPrivateKeyHex()),
+                password,
                 "AliceWallet",
-                DateTime.Now,
-                passphrase
+                DateTime.Now
             );
  
             ExtKey expectedExtKey = new ExtKey(this.Alice.GetPrivateKeyHex());
-            string expectedEncryptedSeed = expectedExtKey.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
+            string expectedEncryptedSeed = expectedExtKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
  
             // Assert
             Assert.Equal("AliceWallet", AliceWallet.Name);
@@ -117,12 +117,12 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
                 new NodeLifetime(), 
                 DateTimeProvider.Default
             );
-            string passphrase = "This is an awesome passphrase";
+            string password = "This is an awesome passphrase";
             Wallet.Wallet AliceWallet = walletManager.RecoverWallet(
                 new ExtKey(this.Alice.GetPrivateKeyHex()),
+                password,
                 "AliceWallet",
-                DateTime.Now,
-                passphrase
+                DateTime.Now
             );
             SecureMessagingController secureMessagingController =  new SecureMessagingController(
                 new Mock<FullNode>().Object,
@@ -134,15 +134,15 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             SecureMessageKeyRequest myKeyRequest = new SecureMessageKeyRequest
             {
                 WalletName = "AliceWallet",
-                Passphrase = passphrase
+                Passphrase = password
             };
             // Act
             Key dumpkey = secureMessagingController.GetPrivateMessagingKey(myKeyRequest);
 
             // Secure message private key derivation algorithm. 
             ExtKey masterKey = new ExtKey(this.Alice.GetPrivateKeyHex());
-            string expencseed = masterKey.PrivateKey.GetEncryptedBitcoinSecret(passphrase, this.network).ToWif();
-            Key expdecseed = Key.Parse(expencseed, passphrase, this.network);
+            string expencseed = masterKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
+            Key expdecseed = Key.Parse(expencseed, password, this.network);
             Key expectedKey = new Key(expdecseed.ToBytes());
 
             // Assert

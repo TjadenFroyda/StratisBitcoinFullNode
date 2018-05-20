@@ -120,9 +120,9 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         /// <param name="name">The name of the new conversation wallet</param>
         /// <param name="handshakeTime">The time of the handshake to exchange pubkeys (or now)</param>
         /// <returns></returns>
-        internal Wallet.Wallet RecoverWalletFromSeed(ExtKey sharedSecret, string name, DateTime handshakeTime)
+        internal Wallet.Wallet RecoverWalletFromSeed(ExtKey sharedSecret, string password, string name, DateTime creationTime)
         {
-            return this.fullNode.NodeService<WalletManager>().RecoverWallet(sharedSecret, name, handshakeTime);
+            return this.fullNode.NodeService<WalletManager>().RecoverWallet(sharedSecret, password, name, creationTime);
         }
         
         /// <summary>
