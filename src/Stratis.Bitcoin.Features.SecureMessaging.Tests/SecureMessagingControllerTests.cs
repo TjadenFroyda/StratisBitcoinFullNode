@@ -9,6 +9,7 @@ using Xunit;
 using System;
 using Stratis.Bitcoin.Features.SecureMessaging.Controllers;
 using Stratis.Bitcoin.Features.SecureMessaging.Models;
+using NBitcoin.DataEncoders;
 
 // TODO: Add Logging
 // TODO: Add/improve Comments

@@ -155,28 +155,6 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
             }
         }
 
-        [Route("get-securemessaging-privatekey")]
-        [HttpPost]
-        public IActionResult GetSecureMessagingPrivateKey([FromBody] SecureMessageKeyRequest request)
-        {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return BuildErrorResponse(this.ModelState);
-            }
-            try
-            {
-                return this.Json(GetPrivateMessagingKey(request));
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
         [Route("get-securemessaging-publickey")]
         [HttpPost]
         public IActionResult GetSecureMessagingPublicKey([FromBody] SecureMessageKeyRequest request)
