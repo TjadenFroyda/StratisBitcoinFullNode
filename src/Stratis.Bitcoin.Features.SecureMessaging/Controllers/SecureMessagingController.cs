@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Controllers
         {
             Key privateKey = GetPrivateMessagingKey(request);
 			PubKey receiverPubKey = new PubKey(request.ReceiverPublicKey);
-            this.secureMessaging = new SecureMessaging(privateKey, receiverPubKey, this.network);
+            this.secureMessaging = new SecureMessagingEngine(privateKey, receiverPubKey, this.network);
             if (action == Action.Encrypt)
             {
                 return this.secureMessaging.EncryptMessage(request.Message);

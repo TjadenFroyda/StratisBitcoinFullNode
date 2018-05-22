@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
     /// Provides the ability to send secure messages through OP_RETURN messages
     /// </summary>
     /// 
-    public class SecureMessaging : ISecureMessaging
+    public class SecureMessagingEngine : ISecureMessaging
     {
         private readonly Key myPrivKey;
         private readonly PubKey extPubKey;
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging
         private readonly Network network;
         private readonly ISymmetricEncryption symmetricEncryption;
         
-        public SecureMessaging(Key privkey, PubKey pubkey, Network net)
+        public SecureMessagingEngine(Key privkey, PubKey pubkey, Network net)
         {
             Guard.NotNull(privkey, nameof(privkey));
             Guard.NotNull(pubkey, nameof(pubkey));

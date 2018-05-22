@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             string expectedKey = "a461392f592ff4292bfce732d808a07f1bc3f49c9a66a40d50761ffb8b2325f6";
  
             // Act
-            SecureMessaging AlgoCheck1 = new SecureMessaging(privKey, pubKey, this.network);
+            SecureMessagingEngine AlgoCheck1 = new SecureMessagingEngine(privKey, pubKey, this.network);
 
             // Assert
             Assert.Equal(expectedKey, AlgoCheck1.GetSharedSecretMasterPrivateKey().ToHex(this.network));            
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             string expectedKey = "1d664ba11d3925cfcd938b2ef131213ba4ca986822944d0a7616b34027738e7c";
 
             // Act
-            SecureMessaging AlgoCheck2 = new SecureMessaging(privKey, pubKey, this.Network);
+            SecureMessagingEngine AlgoCheck2 = new SecureMessagingEngine(privKey, pubKey, this.Network);
 
             // Assert
             Assert.Equal(AlgoCheck2.GetSharedSecretMasterPrivateKey().ToHex(this.Network), expectedKey);
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
             string expectedKey = "7fcfa754a40ceaabee5cd3df1a99ee2e5d2c027fdcbd8e437d9be757ea58708f";
 
             // Act
-            SecureMessaging AlgoCheck3 = new SecureMessaging(privKey, pubKey, this.network);
+            SecureMessagingEngine AlgoCheck3 = new SecureMessagingEngine(privKey, pubKey, this.network);
 
             // Assert
             Assert.Equal(AlgoCheck3.GetSharedSecretMasterPrivateKey().ToHex(this.Network), expectedKey);
@@ -114,8 +114,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         public void TestMatchingSharedSecrets()
         {   
             //Set up
-            SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
-            SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
+            SecureMessagingEngine BobSM = new SecureMessagingEngine(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessagingEngine AliceSM = new SecureMessagingEngine(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
 
             // Act and Assert
             Assert.Equal(
@@ -132,8 +132,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         {
             // Set up
             string BobPlainTextMessage = "Have a great day Alice!";
-            SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
-            SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
+            SecureMessagingEngine BobSM = new SecureMessagingEngine(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessagingEngine AliceSM = new SecureMessagingEngine(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
  
             // Act
             string BobCipher = BobSM.EncryptMessage(BobPlainTextMessage);
@@ -151,8 +151,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         {
             // Set Up
             string AlicePlainTextMessage = "Bugger off, Bob";
-            SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
-            SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
+            SecureMessagingEngine BobSM = new SecureMessagingEngine(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessagingEngine AliceSM = new SecureMessagingEngine(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
 
             // Act
             string AliceCipher = AliceSM.EncryptMessage(AlicePlainTextMessage);
@@ -170,8 +170,8 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
         {
             // Set up
             string AlicePlainTextMessage = @"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras eget varius massa. Nulla non dictum turpis, quis viverra odio. Suspendisse commodo, mauris at convallis scelerisque, quam diam sodales sapien, sit amet dictum odio tortor ut est. Nullam vulputate venenatis turpis vitae porttitor. Integer quis turpis dapibus, viverra orci vel, molestie odio. Aliquam pulvinar dapibus nisl, non vehicula est efficitur feugiat. Nunc egestas mi sit amet nibh pretium mollis. Vestibulum dui dui, elementum non tempor non, auctor nec ante. Quisque luctus pretium posuere. Quisque mattis, sem varius consectetur sollicitudin, ex arcu fermentum risus, id finibus risus leo et enim. In molestie volutpat arcu sit amet condimentum. Maecenas nec enim lobortis arcu imperdiet hendrerit. Maecenas pulvinar justo eget commodo fermentum. Nulla porttitor dapibus felis eu ultricies. Phasellus ac dignissim velit, quis luctus lectus. Cras convallis vitae tortor rutrum commodo. Nunc vitae lobortis elit, eget gravida neque. Sed at auctor lorem. Vivamus cursus nibh lacus, quis cursus arcu volutpat vel. Aenean id gravida odio. Vestibulum a mollis elit. Quisque tellus dolor, tempor eu tortor sit amet, finibus tincidunt augue.Etiam odio justo, laoreet non nunc ut, posuere sodales urna. Nunc mattis et lectus at gravida. Proin vel risus vitae tortor faucibus posuere in et enim. Maecenas sit amet purus tincidunt justo fringilla tempus sit amet lobortis nunc. In ultricies, odio sed tempus rhoncus, urna mauris hendrerit dui, condimentum pretium enim eros id diam.Maecenas eu fermentum lorem. Cras id facilisis purus, non ultrices turpis. Pellentesque nisi tortor, viverra eu rhoncus sit amet, accumsan et ipsum.Praesent varius nibh ut vulputate dictum. Vestibulum quis suscipit purus, at sollicitudin augue. Maecenas ac maximus turpis, sed dignissim lacus. Nullam fermentum lobortis vulputate. Suspendisse ac magna pharetra arcu cursus tempus sed eu turpis. Aenean elementum a libero at commodo.";
-            SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
-            SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
+            SecureMessagingEngine BobSM = new SecureMessagingEngine(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessagingEngine AliceSM = new SecureMessagingEngine(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
 
             // Act
             string AliceCipher = AliceSM.EncryptMessage(AlicePlainTextMessage);
@@ -194,14 +194,14 @@ namespace Stratis.Bitcoin.Features.SecureMessaging.Tests
                 priv: "3e4af283ebb2716f0212b7079466f3b75cc3d4189877ab7953e48c826eebdd4d",
                 net: this.network
             );
-            SecureMessaging BobSM = new SecureMessaging(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
-            SecureMessaging AliceSM = new SecureMessaging(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
+            SecureMessagingEngine BobSM = new SecureMessagingEngine(this.Bob.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessagingEngine AliceSM = new SecureMessagingEngine(this.Alice.GetPrivateKey(), this.Bob.GetPublicKey(), this.network);
 
             // Act
             string AliceCipher = AliceSM.EncryptMessage(AlicePlainTextMessage);
 
             // Assert
-            SecureMessaging ChadSM = new SecureMessaging(Chad.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
+            SecureMessagingEngine ChadSM = new SecureMessagingEngine(Chad.GetPrivateKey(), this.Alice.GetPublicKey(), this.network);
             try
             {
                 string ChadDecryptedPlainTextMessage = ChadSM.DecryptMessage(AliceCipher);
